@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request, abort
-from data.get_cerberus_data import get_chain_prices, CERBERUS_CHAINS
+from get_cerberus_data import get_chain_prices, CERBERUS_CHAINS
 
 app = Flask(__name__)
 
