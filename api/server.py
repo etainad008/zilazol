@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request, abort
 from flask_cors import CORS
 from get_cerberus_data import get_chain_prices, CERBERUS_CHAINS
-from process_cerberus_data import prices_to_dict
+from api.process_data import prices_to_dict
 from db import get_unique_names
 
 app = Flask(__name__)

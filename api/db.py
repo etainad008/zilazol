@@ -1,5 +1,5 @@
 from collections import defaultdict
-from process_cerberus_data import process
+from api.process_data import process
 
 
 def get_unique_names(chain_prices: list, common: int):
@@ -22,7 +22,7 @@ def get_unique_names(chain_prices: list, common: int):
 
 if __name__ == "__main__":
     from get_cerberus_data import get_chain_prices, CERBERUS_CHAINS
-    from process_cerberus_data import to_json
+    from api.process_data import to_json
     from db import get_unique_names
 
     a = []
