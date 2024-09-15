@@ -1,0 +1,37 @@
+with 1 prices file per chain:
+0: number of products is 83989
+1: number of products is 83989
+2: number of products is 6850
+3: number of products is 2091
+4: number of products is 733
+5: number of products is 268
+6: number of products is 113
+7: number of products is 37
+
+with 3 prices files per chain:
+1: number of products is 124249
+2: number of products is 11188
+3: number of products is 3673
+4: number of products is 1411
+5: number of products is 562
+6: number of products is 224
+7: number of products is 99
+8: number of products is 36
+
+with 6 prices files per chain:
+1: number of products is 137417
+2: number of products is 12798
+3: number of products is 4283
+4: number of products is 1686
+5: number of products is 693
+6: number of products is 280
+7: number of products is 120
+8: number of products is 44
+9: number of products is 11
+
+with 10 prices files per chain:
+2: number of products is 15192
+3: number of products is 5046
+4: number of products is 2038
+5: number of products is 889
+6: number of products is 349

@@ -128,7 +128,7 @@ def login(chain: str) -> tuple:
     return post_tokens(user_url, headers=headers, params=login_params)
 
 
-def get_file_list(chain: str, amount: int = 100, search: str = ""):
+def get_file_list(chain: str, amount: int = 1, search: str = ""):
     """Returns the file list from the server along with the cftp token for downloading."""
     if amount < 1:
         raise Exception("Amount must be positive")
