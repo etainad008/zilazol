@@ -35,3 +35,11 @@ with 10 prices files per chain:
 4: number of products is 2038
 5: number of products is 889
 6: number of products is 349
+
+with Shufersal and with 10 prices files per chain:
+1: number of products is 177646
+2: number of products is 15959
+3: number of products is 5345
+4: number of products is 2250
+5: number of products is 1005
+6: number of products is 409

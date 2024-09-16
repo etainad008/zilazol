@@ -1,5 +1,5 @@
 from collections import defaultdict
-from api.process_data import process
+from process_data import process, to_json
 
 
 def get_unique_names(chain_prices: list, common: int):
@@ -22,15 +22,20 @@ def get_unique_names(chain_prices: list, common: int):
 
 if __name__ == "__main__":
     from get_cerberus_data import get_chain_prices, CERBERUS_CHAINS
-    from api.process_data import to_json
+    from get_shufersal_data import get_prices
     from db import get_unique_names
+
+    AMOUNT = 10
 
     a = []
     for chain_name in CERBERUS_CHAINS.keys():
-        for prices in get_chain_prices(chain_name, 10):
+        for prices in get_chain_prices(chain_name, AMOUNT):
             a.append(to_json(prices))
 
-    for i in range(2, 7):
+    for prices in get_prices(AMOUNT):
+        a.append(to_json(prices))
+
+    for i in range(1, 7):
         names = get_unique_names(a, i)
 
         print(f"{i}: number of products is {len(names)}")
