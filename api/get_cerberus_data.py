@@ -66,12 +66,9 @@ CERBERUS_CHAINS = {
 }
 
 
-def main():
-    # here you would do something like:
-    # file_list, cftp = get_file_list(vendor, 1, "PriceFull")
-    # get_file_content(file_list[0]["fname"], cftp)
-
-    pass
+def get_chain_prices(chain: str, amount: int) -> list:
+    file_list, cftp = get_file_list(chain, amount, "PriceFull")
+    return [get_file_content(file["fname"], cftp) for file in file_list]
 
 
 def get_file_content(file_name: str, cftp: str) -> bytes:
@@ -115,28 +112,28 @@ def extract_csrf(content: bytes):
     return csrf_token
     
 
-def login(vendor: str) -> tuple:
+def login(chain: str) -> tuple:
     """Logs in into the Cerberus FTP server
-    with the specified vendor and password,
+    with the specified chain and password,
     and returns the file tokens."""
     login_url = CERBERUS_BASE_URL + CERBERUS_LOGIN
     user_url = CERBERUS_BASE_URL + CERBERUS_LOGIN + CERBERUS_USER
 
     cftp, csrf = get_tokens(login_url)
     headers = {"Cookie": f"cftpSID={cftp}"}
-    password = CERBERUS_CHAINS[vendor]["password"]
-    login_params = {"r": "", "username": vendor, "password": password, "Submit": CERBERUS_SUBMIT, "csrftoken": csrf}
+    password = CERBERUS_CHAINS[chain]["password"]
+    login_params = {"r": "", "username": chain, "password": password, "Submit": CERBERUS_SUBMIT, "csrftoken": csrf}
 
     # /login/user redirects to /file
     return post_tokens(user_url, headers=headers, params=login_params)
 
 
-def get_file_list(vendor: str, amount: int = 100, search: str = ""):
+def get_file_list(chain: str, amount: int = 1, search: str = ""):
     """Returns the file list from the server along with the cftp token for downloading."""
     if amount < 1:
         raise Exception("Amount must be positive")
 
-    cftp, csrf = login(vendor)
+    cftp, csrf = login(chain)
     cookies = {"cftpSID": cftp}
     body_params = {
         'iDisplayLength': amount, # how many we want the server to return
@@ -158,7 +155,3 @@ def get_file_list(vendor: str, amount: int = 100, search: str = ""):
 
 def time_string_to_datetime(time: str):
     return datetime.strptime(time, "%Y-%m-%dT%H:%M:%SZ")
-    
-
-if __name__ == "__main__":
-    main()
