@@ -9,6 +9,9 @@ In this document, we list ways to request and download resources from different 
       - [Authentication and File Access](#authentication-and-file-access)
     - [Shufersal (7290027600007)](#shufersal-7290027600007)
       - [Authentication and File Access](#authentication-and-file-access-1)
+    - [SuperPharm (7290172900007)](#superpharm-7290172900007)
+      - [Authentication and File Access](#authentication-and-file-access-2)
+      - [Remarks](#remarks)
 
 ## Background
 
@@ -70,10 +73,38 @@ The Shufersal file server is hosted at `https://prices.shufersal.co.il/`. This i
 
 Fortunately, this server does not require any user sign in, which simplfies the query process.
 
-1. Perform a `GET` request to root `/`. The response includes the page's HTML, but more importantly two cookies `ARRAffinity` and `ARRAffinitySameSite` with tokens. For the time being, they look identical.
+1. Perform a `GET` request to root `/`. The response includes two cookies `ARRAffinity` and `ARRAffinitySameSite` with tokens (for the time being, they look identical), but more importantly - the page's HTML.
 
 2. Make another `GET` request to `/FileObject/UpdateCategory` to change the file list. Here, we can use query parameters such as `catID` to choose our file category or `storeId` to choose which store we wan to query from (more parameters like `sort` are not covered here, but you can see them being sent if you filter/sort through th UI).
 
 3. Parse the response's HTML to get the file you want. The file list is in a table, and parsing the rows is very easy. When you have found a file(s) you want to download, you can use the download link provided on each entry via the `<a>` tag.
 
 4. Profit.
+
+### SuperPharm (7290172900007)
+
+The SuperPharm file server is hosted at `https://prices.super-pharm.co.il/`. This is a `nginx/1.10.3 (Ubuntu)` server.
+
+#### Authentication and File Access
+
+1. Perform a `GET` request to root `/`. Each request to root can include the following query parameters:
+
+   | Name  | Description                                            |
+   | :---- | :----------------------------------------------------- |
+   | type  | The category of the file, e.g. Stores, PriceFull, etc. |
+   | date  | The upload date of the files                           |
+   | store | The store ID                                           |
+
+   When left empty, each one of the parameters represents "All".
+
+   The response includes the page's HTML, as well as a cookie named `ci_session`.
+
+2. As we have sen beforwe, we can parse the response's HTML to get the files we want. The file list, again, is in a table, and each row is a file. When you have found a file(s) you want to download, you can use the download link provided on each entry via the `<a>` tag.
+
+3. Requesting said link from the server does not return you the resource itself - but a `JSON` object with a `"status"` key (which on success is `0`), and an `"href"` key. Now, we can request the value of `"href"` from the server, passing along `ci_session`.
+
+4. The server should then respond with the resource.
+
+#### Remarks
+
+For some reason, the file extensions are `.gz`, but the files themselves are a `ZIP` format. To make matters worse, the file is encoded using `ISO-8859-8` - we need to parse it into `UTF-8`. To make matters _even worse_, the format of the `XML` nodes is different from other chains.

@@ -11,6 +11,7 @@ from lxml import etree
 SUPER_PHARM_BASE_URL = 'https://prices.super-pharm.co.il'
 SUPER_PHARM_CATEGORIES = Enum('SUPER_PHARM_CATEGORIES', { 'All': '', 'Prices': 'Price', 'PricesFull': 'PriceFull', 'Promos': 'Promo', 'PromosFull': 'PromoFull', 'Stores': 'StoresAll'})
 SUPER_PHARM_STORES = Enum('SHUFERSAL_STORES', { 'All': '' })
+SUPER_PHARM_SESSION_COOKIE = "ci_session"
 
 
 def hebrew_ascii_to_utf8(hebrew_bytes: bytes):
@@ -51,7 +52,7 @@ def update_categories(category = SUPER_PHARM_CATEGORIES.PricesFull.value, date =
     res = requests.get(SUPER_PHARM_BASE_URL, params=params)
     check_response(res)
 
-    return (res, res.cookies.get_dict().get("ci_session"))
+    return (res, res.cookies.get_dict().get(SUPER_PHARM_SESSION_COOKIE))
 
 
 def get_file_list(content: bytes):
@@ -70,9 +71,10 @@ def get_file_list(content: bytes):
 
 
 def get_file_content(url_download: str, cookie: str) -> bytes:
-    download_res = requests.get(url=SUPER_PHARM_BASE_URL + url_download, cookies={ "ci_session": cookie })
+    auth_cookie = { SUPER_PHARM_SESSION_COOKIE: cookie }
+    download_res = requests.get(url=SUPER_PHARM_BASE_URL + url_download, cookies=auth_cookie)
     download_descriptor = json.loads(download_res.content.decode('utf-8'))
-    res = requests.get(url=SUPER_PHARM_BASE_URL + download_descriptor["href"], cookies={ "ci_session": cookie })
+    res = requests.get(url=SUPER_PHARM_BASE_URL + download_descriptor["href"], cookies=auth_cookie)
     check_response(res)
 
     return hebrew_ascii_to_utf8(unzip(res.content))
