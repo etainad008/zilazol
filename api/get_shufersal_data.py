@@ -1,6 +1,5 @@
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
 import gzip
 from enum import Enum
 
@@ -61,7 +60,8 @@ def get_prices(amount: int) -> list:
     get_affinity_tokens()
     res = update_categories()
     file_list = get_file_list(res.content)
-    return [get_file_content(file["download_link"]) for file in file_list][:amount]
+    
+    return [get_file_content(file["download_link"]) for file in file_list[:amount]]
     
 
 def check_response(res: requests.Response):

@@ -18,7 +18,3 @@ def process(blob: bytes) -> str:
 
 def to_json(blob: bytes):
     return xmltodict.parse(blob, encoding="utf-8")
-
-
-def prices_to_dict(prices: list):
-    return [to_json(i) for i in prices] # need to nest one more time

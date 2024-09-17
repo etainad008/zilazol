@@ -21,19 +21,23 @@ def get_unique_names(chain_prices: list, common: int):
 # i love my dad
 
 if __name__ == "__main__":
-    from get_cerberus_data import get_chain_prices, CERBERUS_CHAINS
-    from get_shufersal_data import get_prices
+    from get_cerberus_data import get_chain_prices as get_cerberus_prices, CERBERUS_CHAINS
+    from get_shufersal_data import get_prices as get_shufersal_prices
+    from get_super_pharm_data import get_prices as get_super_pharm_prices
     from db import get_unique_names
 
     AMOUNT = 10
 
     a = []
     for chain_name in CERBERUS_CHAINS.keys():
-        for prices in get_chain_prices(chain_name, AMOUNT):
+        for prices in get_cerberus_prices(chain_name, AMOUNT):
             a.append(to_json(prices))
 
-    for prices in get_prices(AMOUNT):
+    for prices in get_shufersal_prices(AMOUNT):
         a.append(to_json(prices))
+
+    # for prices in get_super_pharm_prices(AMOUNT):
+    #     a.append(to_json(prices))    
 
     for i in range(1, 7):
         names = get_unique_names(a, i)
