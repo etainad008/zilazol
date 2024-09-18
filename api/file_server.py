@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from constants import SERVER_TYPE
 from constants import *
 from requests import Response
 from datetime import datetime
