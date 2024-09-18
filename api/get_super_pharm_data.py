@@ -10,7 +10,7 @@ from lxml import etree
 
 SUPER_PHARM_BASE_URL = 'https://prices.super-pharm.co.il'
 SUPER_PHARM_CATEGORIES = Enum('SUPER_PHARM_CATEGORIES', { 'All': '', 'Prices': 'Price', 'PricesFull': 'PriceFull', 'Promos': 'Promo', 'PromosFull': 'PromoFull', 'Stores': 'StoresAll'})
-SUPER_PHARM_STORES = Enum('SHUFERSAL_STORES', { 'All': '' })
+SUPER_PHARM_STORES = Enum('SUPER_PHARM', { 'All': '' })
 SUPER_PHARM_SESSION_COOKIE = "ci_session"
 
 
