@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
-from constants import *
 from requests import Response
 from datetime import datetime
+
+from constants import *
+from data_file import DataFile
 
 
 class FileServer(ABC):
@@ -29,8 +31,13 @@ class FileServer(ABC):
             )
 
     @abstractmethod
-    def get_files(self, category: FILE_CATEGORY, amount: int) -> list:
+    def get_files(self, category: FILE_CATEGORY, amount: int) -> list[DataFile]:
         """Gets a certain amount of files of a specific type."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def updated(self, category: FILE_CATEGORY) -> bool:
+        """Returns wether there are new files in the given category."""
         raise NotImplementedError()
 
     @abstractmethod
@@ -40,7 +47,11 @@ class FileServer(ABC):
 
 
 class FileServerCerberus(FileServer):
-    def get_files(self, category: FILE_CATEGORY, amount: int) -> list:
+
+    def get_files(self, category: FILE_CATEGORY, amount: int) -> list[DataFile]:
+        pass
+
+    def updated(self, category: FILE_CATEGORY) -> bool:
         pass
 
     def string_datetime_converter(self, value: str | datetime) -> str | datetime:
@@ -48,7 +59,11 @@ class FileServerCerberus(FileServer):
 
 
 class FileServerShufersal(FileServer):
-    def get_files(self, category: FILE_CATEGORY, amount: int) -> list:
+
+    def get_files(self, category: FILE_CATEGORY, amount: int) -> list[DataFile]:
+        pass
+
+    def updated(self, category: FILE_CATEGORY) -> bool:
         pass
 
     def string_datetime_converter(self, value: str | datetime) -> str | datetime:
@@ -56,7 +71,11 @@ class FileServerShufersal(FileServer):
 
 
 class FileServerSuperPharm(FileServer):
-    def get_files(self, category: FILE_CATEGORY, amount: int) -> list:
+
+    def get_files(self, category: FILE_CATEGORY, amount: int) -> list[DataFile]:
+        pass
+
+    def updated(self, category: FILE_CATEGORY) -> bool:
         pass
 
     def string_datetime_converter(self, value: str | datetime) -> str | datetime:
