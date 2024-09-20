@@ -1,0 +1,30 @@
+﻿ניתן לבצע חיפוש מתקדם בסגנון REST (ישירות מכתובת ה-URL) ע"י הכנסת אחד או יותר מהפרמטרים הבאים:
+code=cccccccccccccsssbbb
+13 ספרות c הראשונות הן קוד הרשת
+3 ספרות s שלאחר מכן הן קוד תת הרשת
+3 ספרות b האחרונות הן קוד הסניף
+ניתן לחפש רק רשת, או רק תת רשת, או רק סניף, על פי הקוד שנזין.
+date=dd/MM/yyyy
+תאריך בפורמט לעיל
+fileType=xxx
+יכול להיות אחד מהשדות הבאים:
+all
+price
+pricefull
+promo
+promofull
+storesfull
+
+דוגמאות:
+http://matrixcatalog.co.il/NBCompetitionRegulations.aspx?code=7290661400001
+יתן לנו חיפוש של רשת מחסני השוק (7290661400001)
+
+http://matrixcatalog.co.il/NBCompetitionRegulations.aspx?code=7290661400001001001
+יתן לנו חיפוש של תת-רשת 001 של רשת מחסני השוק (7290661400001)
+
+http://matrixcatalog.co.il/NBCompetitionRegulations.aspx?code=7290661400001001001
+יתן לנו חיפוש של סניף ב"ש (קוד 001) בתת-רשת 001 רשת מחסני השוק (7290661400001)
+
+http://matrixcatalog.co.il/NBCompetitionRegulations.aspx?date=01/01/2016&fileType=storesfull
+יתן לנו חיפוש של קבצי החנויות מתאריך 1/1/16
+

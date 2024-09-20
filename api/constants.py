@@ -18,9 +18,12 @@ CHAIN = Enum(
         "SuperCofixApp",
         "Shufersal",
         "SuperPharm",
+        "Victory",
+        "HCohen",
+        "MachsaneiHashook",
     ],
 )
-SERVER_TYPE = Enum("SERVER_TYPE", ["Cerberus", "Shufersal", "SuperPharm"])
+SERVER_TYPE = Enum("SERVER_TYPE", ["Cerberus", "Shufersal", "SuperPharm", "Nibit"])
 FILE_CATEGORY = Enum(
     "FILE_CATEGORY", ["All", "Prices", "PricesFull", "Promos", "PromosFull", "Stores"]
 )
@@ -134,6 +137,32 @@ SERVER_TYPE_DATA = {
             FILE_CATEGORY.Stores: {
                 "parameter_name": "StoresFull",
                 "format": FILE_FORMAT_SUPER_PHARM,
+            },
+        },
+    },
+    SERVER_TYPE.Nibit: {
+        "domain": "laibcatalog.co.il/",
+        "categories": {
+            FILE_CATEGORY.All: {"parameter_name": "all", "format": None},
+            FILE_CATEGORY.Prices: {
+                "parameter_name": "price",
+                "format": FILE_FORMAT_PRICES_DEFAULT,
+            },
+            FILE_CATEGORY.PricesFull: {
+                "parameter_name": "pricefull",
+                "format": FILE_FORMAT_PRICES_DEFAULT,
+            },
+            FILE_CATEGORY.Promos: {
+                "parameter_name": "promo",
+                "format": FILE_FORMAT_PROMOS_DEFAULT,
+            },
+            FILE_CATEGORY.PromosFull: {
+                "parameter_name": "promofull",
+                "format": FILE_FORMAT_PROMOS_DEFAULT,
+            },
+            FILE_CATEGORY.Stores: {
+                "parameter_name": "storesfull",
+                "format": FILE_FORMAT_STORES_DEFAULT,
             },
         },
     },
@@ -281,5 +310,18 @@ CHAINS_DATA = {
     CHAIN.SuperPharm: {
         "id": "7290172900007",
         "server": {"type": SERVER_TYPE.SuperPharm, "creds": None},
+    },
+    # NIBIT
+    CHAIN.Victory: {
+        "id": "7290696200003",
+        "server": {"type": SERVER_TYPE.Nibit, "creds": None},
+    },
+    CHAIN.HCohen: {
+        "id": "7290455000004",
+        "server": {"type": SERVER_TYPE.Nibit, "creds": None},
+    },
+    CHAIN.MachsaneiHashook: {
+        "id": "7290661400001",
+        "server": {"type": SERVER_TYPE.Nibit, "creds": None},
     },
 }

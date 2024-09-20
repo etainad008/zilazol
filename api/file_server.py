@@ -15,6 +15,8 @@ class FileServer(ABC):
                 return super().__new__(FileServerShufersal)
             case SERVER_TYPE.SuperPharm:
                 return super().__new__(FileServerSuperPharm)
+            case SERVER_TYPE.Nibit:
+                return super().__new__(FileServerNibit)
             case _:
                 raise ValueError(f"Unsupported server type: {type}")
 
@@ -71,6 +73,18 @@ class FileServerShufersal(FileServer):
 
 
 class FileServerSuperPharm(FileServer):
+
+    def get_files(self, category: FILE_CATEGORY, amount: int) -> list[DataFile]:
+        pass
+
+    def updated(self, category: FILE_CATEGORY) -> bool:
+        pass
+
+    def string_datetime_converter(self, value: str | datetime) -> str | datetime:
+        pass
+
+
+class FileServerNibit(FileServer):
 
     def get_files(self, category: FILE_CATEGORY, amount: int) -> list[DataFile]:
         pass
