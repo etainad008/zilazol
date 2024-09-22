@@ -40,11 +40,11 @@ class Entity(ABC):
                 self.remark = data["Remark"]
                 self.items = data["PromotionItems"]["Item"]
             case ENTITY_TYPE.Store:
-                self.id = data["StoreId"]
+                self.id = data["StoreID"]
                 self.name = data["StoreName"]
                 self.address = data["Address"]
                 self.city = data["City"]
-                self.zip_code = data["ZipCode"]
+                self.zip_code = data["ZIPCode"]
 
 
 class Item(Entity):

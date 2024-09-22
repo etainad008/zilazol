@@ -63,7 +63,7 @@ FILE_FORMAT_STORES_DEFAULT = {
 
 SERVER_TYPE_DATA = {
     SERVER_TYPE.Cerberus: {
-        "domain": "url.publishedprices.co.il",
+        "domain": "https://url.publishedprices.co.il",
         "categories": {
             FILE_CATEGORY.All: {"parameter_name": "", "format": None},
             FILE_CATEGORY.Prices: {
@@ -89,7 +89,7 @@ SERVER_TYPE_DATA = {
         },
     },
     SERVER_TYPE.Shufersal: {
-        "domain": "prices.shufersal.co.il",
+        "domain": "https://prices.shufersal.co.il",
         "categories": {
             FILE_CATEGORY.All: {"parameter_name": "0", "format": None},
             FILE_CATEGORY.Prices: {
@@ -115,7 +115,7 @@ SERVER_TYPE_DATA = {
         },
     },
     SERVER_TYPE.SuperPharm: {
-        "domain": "prices.super-pharm.co.il",
+        "domain": "https://prices.super-pharm.co.il",
         "categories": {
             FILE_CATEGORY.All: {"parameter_name": "", "format": None},
             FILE_CATEGORY.Prices: {
@@ -141,28 +141,48 @@ SERVER_TYPE_DATA = {
         },
     },
     SERVER_TYPE.Nibit: {
-        "domain": "laibcatalog.co.il/",
+        "domain": "https://laibcatalog.co.il/",
         "categories": {
             FILE_CATEGORY.All: {"parameter_name": "all", "format": None},
             FILE_CATEGORY.Prices: {
                 "parameter_name": "price",
-                "format": FILE_FORMAT_PRICES_DEFAULT,
+                "format": {
+                    "root": "Prices",
+                    "entity_list": "Products Product",
+                    "item": "Product",
+                },
             },
             FILE_CATEGORY.PricesFull: {
                 "parameter_name": "pricefull",
-                "format": FILE_FORMAT_PRICES_DEFAULT,
+                "format": {
+                    "root": "Prices",
+                    "entity_list": "Products Product",
+                    "item": "Product",
+                },
             },
             FILE_CATEGORY.Promos: {
                 "parameter_name": "promo",
-                "format": FILE_FORMAT_PROMOS_DEFAULT,
+                "format": {
+                    "root": "Promos",
+                    "entity_list": "Sales Sale",
+                    "item": "Sale",
+                },
             },
             FILE_CATEGORY.PromosFull: {
                 "parameter_name": "promofull",
-                "format": FILE_FORMAT_PROMOS_DEFAULT,
+                "format": {
+                    "root": "Promos",
+                    "entity_list": "Sales Sale",
+                    "item": "Sale",
+                },
             },
             FILE_CATEGORY.Stores: {
                 "parameter_name": "storesfull",
-                "format": FILE_FORMAT_STORES_DEFAULT,
+                "format": {
+                    "root": "Store",
+                    "entity_list": "Branches Branch",
+                    "item": "Branch",
+                },
             },
         },
     },
