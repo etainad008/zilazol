@@ -76,17 +76,94 @@ class FileServerCerberus(FileServer):
 
 
 class FileServerShufersal(FileServer):
+    SHUFERSAL_UPDATE_CATEGORY = "/FileObject/UpdateCategory"
 
     def get_files(
         self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
     ) -> list[DataFile]:
-        pass
+        self.get_affinity_tokens()
+        res = self.update_categories(category=category)
+        self.check_response(res)
+        file_list = self.get_file_list(res.content)
+
+        return [
+            DataFile(
+                self.get_file_content(file["download_link"]),
+                category=category,
+                server_type=self.type,
+            )
+            for file in file_list[:amount]
+        ]
 
     def updated(self, category: FILE_CATEGORY) -> bool:
         pass
 
     def string_datetime_converter(self, value: str | datetime) -> str | datetime:
         pass
+
+    def get_affinity_tokens(self):
+        res = requests.get(url=self.base_url)
+        self.check_response(res)
+
+        ARRaffinity = res.cookies.get_dict().get("ARRAffinity")
+        ARRAffinitySameSite = res.cookies.get_dict().get("ARRAffinitySameSite")
+
+        return (ARRaffinity, ARRAffinitySameSite)
+
+    def update_categories(
+        self,
+        category=FILE_CATEGORY,
+        store=0,  # All
+    ):
+        params = {"catID": self.get_category_parameter_name(category), "storeId": store}
+        res = requests.get(self.base_url + self.SHUFERSAL_UPDATE_CATEGORY, data=params)
+        self.check_response(res)
+
+        return res
+
+    def get_file_list(self, content: bytes):
+        soup = BeautifulSoup(content, "lxml")
+        rows = soup.select("tr.webgrid-row-style, tr.webgrid-alternating-row")
+        keys = [
+            "download_link",
+            "timestamp",
+            "size",
+            "format",
+            "category",
+            "address",
+            "name",
+            "sort_id",
+        ]
+
+        file_list = []
+        for row in rows:
+            data = row.find_all("td")
+            file_list.append(
+                {
+                    keys[i]: (
+                        data[i].text.strip() if not data[i].a else data[i].a["href"]
+                    )
+                    for i in range(len(keys))
+                }
+            )
+
+        return file_list
+
+    def get_file_content(self, url_download: str) -> bytes:
+        res = requests.get(url=url_download)
+        self.check_response(res)
+
+        return gzip.decompress(res.content)
+
+    def get_prices(self, amount: int) -> list:
+        self.get_affinity_tokens()
+        res = self.update_categories()
+        self.check_response(res)
+        file_list = self.get_file_list(res.content)
+
+        return [
+            self.get_file_content(file["download_link"]) for file in file_list[:amount]
+        ]
 
 
 class FileServerSuperPharm(FileServer):
@@ -281,3 +358,10 @@ class FileServerNibit(FileServer):
     def make_request_code(self, chain: CHAIN, subchain: str, store_id: str) -> str:
         chain_id = CHAINS_DATA[chain]["id"]
         return f"{chain_id}{subchain}{store_id}"
+
+
+if __name__ == "__main__":
+    a = FileServer(SERVER_TYPE.Shufersal, None)
+    b = a.get_files(CHAIN.Shufersal, FILE_CATEGORY.Promos, 1)
+    b[0].parse()
+    pass

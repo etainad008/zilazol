@@ -51,7 +51,7 @@ FILE_FORMAT_PRICES_DEFAULT = {
 
 FILE_FORMAT_PROMOS_DEFAULT = {
     "root": "root",
-    "entity_list": "Promotions",
+    "entity_list": "Promotions Promotion",
     "item": "Promotion",
 }
 
