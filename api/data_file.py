@@ -10,20 +10,37 @@ class DataFile:
         self.content = content
         self.category = category
         self.server_type = server_type
-        self.format = SERVER_TYPE_DATA[server_type]["categories"][category]["format"]
+        self.file_format = SERVER_TYPE_DATA[server_type]["categories"][category][
+            "format"
+        ]["file"]
+        self.entity_format = SERVER_TYPE_DATA[server_type]["categories"][category][
+            "format"
+        ]["entity"]
 
     def parse(self) -> list[Entity]:
         data_dict = xmltodict.parse(self.content, encoding="utf-8")
-        entity_list_path = (
-            self.format["root"] + " " + self.format["entity_list"]
-        ).split(" ")
 
         # traverse the dict to get the entity list
-        entity_list = data_dict
-        for node in entity_list_path:
-            entity_list = entity_list[node]
+        entity_list = self.get_value_by_path(
+            data_dict,
+            self.build_path(self.file_format["root"], self.file_format["entity_list"]),
+        )
 
         return [
-            Entity(type=FILE_CATEGORY_TO_ITEM_TYPE[self.category], data=entity)
+            Entity(
+                type=FILE_CATEGORY_TO_ENTITY_TYPE[self.category],
+                server_type=self.server_type,
+                data=entity,
+            )
             for entity in entity_list
         ]
+
+    def get_value_by_path(self, data: dict, path: str):
+        value = data
+        for temp in path:
+            value = value[temp]
+
+        return value
+
+    def build_path(self, *args) -> str:
+        return (" ".join(args)).split(" ")
