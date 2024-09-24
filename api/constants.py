@@ -11,7 +11,7 @@ CHAIN = Enum(
         "SalachDabach",
         "StopMarket",
         "Politzer",
-        "PazBo",
+        "Yellow",
         "Freshmarket",
         "Keshet",
         "RamiLevi",
@@ -21,9 +21,20 @@ CHAIN = Enum(
         "Victory",
         "HCohen",
         "MachsaneiHashook",
+        "Kingstore",
+        "Maayan2000",
+        "GoodPharm",
+        "ZolVeBegadol",
+        "SuperSapir",
+        "SuperBareket",
+        "SuperYoda",
+        "ShukHayir",
+        "ShefaBirkatHashem",
     ],
 )
-SERVER_TYPE = Enum("SERVER_TYPE", ["Cerberus", "Shufersal", "SuperPharm", "Nibit"])
+SERVER_TYPE = Enum(
+    "SERVER_TYPE", ["Cerberus", "Shufersal", "SuperPharm", "Nibit", "BinaProjects"]
+)
 FILE_CATEGORY = Enum(
     "FILE_CATEGORY", ["All", "Prices", "PricesFull", "Promos", "PromosFull", "Stores"]
 )
@@ -63,6 +74,11 @@ FILE_FORMAT_PRICES_SHUFERSAL = {"root": "root", "entity_list": "Items Item"}
 FILE_FORMAT_PRICES_NIBIT = {
     "root": "Prices",
     "entity_list": "Products Product",
+}
+
+FILE_FORMAT_PRICES_BINA_PROJECTS = {
+    "root": "Root",
+    "entity_list": "Items Item",
 }
 
 ENTITY_FORMAT_ITEM_CERBERUS = {
@@ -141,9 +157,31 @@ ENTITY_FORMAT_ITEM_SHUFERSAL = {
     "item_status": "ItemStatus",
 }
 
+ENTITY_FORMAT_ITEM_BINA_PROJECTS = {
+    "update_date": "PriceUpdateDate",
+    "item_code": "ItemCode",
+    "item_type": "ItemType",
+    "item_name": "ItemNm",
+    "manufacturer_name": "ManufacturerName",
+    "manufacture_country": "ManufactureCountry",
+    "manufacturer_item_description": "ManufacturerItemDescription",
+    "unit_quantity": "UnitQty",
+    "quantity": "Quantity",
+    "b_is_weighted": "bIsWeighted",
+    "unit_of_measurement": "UnitOfMeasure",
+    "quantity_in_package": "QtyInPackage",
+    "item_price": "ItemPrice",
+    "unit_of_measurement_price": "UnitOfMeasurePrice",
+    "allow_discount": "AllowDiscount",
+    "item_status": "ItemStatus",
+}
+
 SERVER_TYPE_DATA = {
     SERVER_TYPE.Cerberus: {
-        "domain": "https://url.publishedprices.co.il",
+        "metadata": {
+            "domain": "https://url.publishedprices.co.il",
+            "chain_by_subdomain": False,
+        },
         "categories": {
             FILE_CATEGORY.All: {"parameter_name": "", "format": None},
             FILE_CATEGORY.Prices: {
@@ -199,7 +237,10 @@ SERVER_TYPE_DATA = {
         },
     },
     SERVER_TYPE.Shufersal: {
-        "domain": "https://prices.shufersal.co.il",
+        "metadata": {
+            "domain": "https://prices.shufersal.co.il",
+            "chain_by_subdomain": False,
+        },
         "categories": {
             FILE_CATEGORY.All: {"parameter_name": "0", "format": None},
             FILE_CATEGORY.Prices: {
@@ -293,7 +334,10 @@ SERVER_TYPE_DATA = {
         },
     },
     SERVER_TYPE.SuperPharm: {
-        "domain": "https://prices.super-pharm.co.il",
+        "metadata": {
+            "domain": "https://prices.super-pharm.co.il",
+            "chain_by_subdomain": False,
+        },
         "categories": {
             FILE_CATEGORY.All: {"parameter_name": "", "format": None},
             FILE_CATEGORY.Prices: {
@@ -359,7 +403,10 @@ SERVER_TYPE_DATA = {
         },
     },
     SERVER_TYPE.Nibit: {
-        "domain": "https://laibcatalog.co.il/",
+        "metadata": {
+            "domain": "https://laibcatalog.co.il/",
+            "chain_by_subdomain": False,
+        },
         "categories": {
             FILE_CATEGORY.All: {"parameter_name": "all", "format": None},
             FILE_CATEGORY.Prices: {
@@ -434,6 +481,85 @@ SERVER_TYPE_DATA = {
             },
         },
     },
+    SERVER_TYPE.BinaProjects: {
+        "metadata": {
+            "domain": "https://{}.binaprojects.com/Main.aspx",
+            "chain_by_subdomain": True,
+        },
+        "categories": {
+            FILE_CATEGORY.All: {"parameter_name": "0", "format": None},
+            FILE_CATEGORY.Prices: {
+                "parameter_name": "2",
+                "format": {
+                    "file": FILE_FORMAT_PRICES_BINA_PROJECTS,
+                    "entity": ENTITY_FORMAT_ITEM_BINA_PROJECTS,
+                },
+            },
+            FILE_CATEGORY.PricesFull: {
+                "parameter_name": "4",
+                "format": {
+                    "file": FILE_FORMAT_PRICES_BINA_PROJECTS,
+                    "entity": ENTITY_FORMAT_ITEM_BINA_PROJECTS,
+                },
+            },
+            FILE_CATEGORY.Promos: {
+                "parameter_name": "3",
+                "format": {
+                    "file": {
+                        "root": "Promos",
+                        "entity_list": "Sales Sale",
+                    },
+                    "entity": {
+                        "promotion_id": "PromotionID",
+                        "promotion_description": "PromotionDescription",
+                        "promotion_update_date": "PriceUpdateDate",
+                        "allow_multiple_discounts": "AllowMultipleDiscounts",
+                        "promotion_start_date": "PromotionStartDate",
+                        "promotion_start_hour": "PromotionStartHour",
+                        "promotion_end_date": "PromotionEndDate",
+                        "promotion_end_hour": "PromotionEndHour",
+                        "min_quantity": "MinQty",
+                        "reward_type": "RewardType",
+                        "discounted_price": "DiscountedPrice",
+                        "min_number_of_item_offered": "MinNoOfItemsOffered",
+                        "promotion_items": "PromotionItems Item",
+                        "additional_restrictions": "AdditionalRestrictions",
+                        "club_id": "ClubID",
+                    },
+                },
+            },
+            FILE_CATEGORY.PromosFull: {
+                "parameter_name": "5",
+                "format": {
+                    "root": "Promos",
+                    "entity_list": "Sales Sale",
+                    "item": "Sale",
+                },
+            },
+            FILE_CATEGORY.Stores: {
+                "parameter_name": "1",
+                "format": {
+                    "file": {
+                        "root": "Root",
+                        "entity_list": "SubChains SubChain Stores Store",
+                    },
+                    "entity": {
+                        "chain_id": None,
+                        "store_id": "StoreId",
+                        "store_name": "StoreName",
+                        "store_type": None,
+                        "chain": None,
+                        "bikoret_number": "BikoretNo",
+                        "subchain_id": None,
+                        "subchain_name": None,
+                        "city": "City",
+                        "address": "Address",
+                        "zipcode": "ZipCode",
+                    },
+                },
+            },
+        },
+    },
 }
 
 
@@ -447,6 +573,7 @@ CHAINS_DATA = {
                 "username": "doralon",
                 "password": "",
             },
+            "domain_name": None,
         },
     },
     CHAIN.TivTaam: {
@@ -457,6 +584,7 @@ CHAINS_DATA = {
                 "username": "TivTaam",
                 "password": "",
             },
+            "domain_name": None,
         },
     },
     CHAIN.HaziHinam: {
@@ -467,6 +595,7 @@ CHAINS_DATA = {
                 "username": "HaziHinam",
                 "password": "",
             },
+            "domain_name": None,
         },
     },
     CHAIN.Yohananof: {
@@ -477,6 +606,7 @@ CHAINS_DATA = {
                 "username": "yohananof",
                 "password": "",
             },
+            "domain_name": None,
         },
     },
     CHAIN.OsherAd: {
@@ -487,6 +617,7 @@ CHAINS_DATA = {
                 "username": "osherad",
                 "password": "",
             },
+            "domain_name": None,
         },
     },
     CHAIN.SalachDabach: {
@@ -497,6 +628,7 @@ CHAINS_DATA = {
                 "username": "SalachD",
                 "password": "12345",
             },
+            "domain_name": None,
         },
     },
     CHAIN.StopMarket: {
@@ -507,6 +639,7 @@ CHAINS_DATA = {
                 "username": "Stop_Market",
                 "password": "",
             },
+            "domain_name": None,
         },
     },
     CHAIN.Politzer: {
@@ -517,9 +650,10 @@ CHAINS_DATA = {
                 "username": "politzer",
                 "password": "",
             },
+            "domain_name": None,
         },
     },
-    CHAIN.PazBo: {
+    CHAIN.Yellow: {
         "id": "7290644700005",
         "server": {
             "type": SERVER_TYPE.Cerberus,
@@ -527,6 +661,7 @@ CHAINS_DATA = {
                 "username": "Paz_bo",
                 "password": "paz468",
             },
+            "domain_name": None,
         },
     },
     CHAIN.Freshmarket: {
@@ -537,6 +672,7 @@ CHAINS_DATA = {
                 "username": "freshmarket",
                 "password": "",
             },
+            "domain_name": None,
         },
     },
     CHAIN.Keshet: {
@@ -547,6 +683,7 @@ CHAINS_DATA = {
                 "username": "Keshet",
                 "password": "",
             },
+            "domain_name": None,
         },
     },
     CHAIN.RamiLevi: {
@@ -557,6 +694,7 @@ CHAINS_DATA = {
                 "username": "RamiLevi",
                 "password": "",
             },
+            "domain_name": None,
         },
     },
     CHAIN.SuperCofixApp: {
@@ -567,29 +705,103 @@ CHAINS_DATA = {
                 "username": "SuperCofixApp",
                 "password": "",
             },
+            "domain_name": None,
         },
     },
     # SHUFERSAL
     CHAIN.Shufersal: {
         "id": "7290027600007",
-        "server": {"type": SERVER_TYPE.Shufersal, "creds": None},
+        "server": {"type": SERVER_TYPE.Shufersal, "creds": None, "domain_name": None},
     },
     # SUPER PHARM
     CHAIN.SuperPharm: {
         "id": "7290172900007",
-        "server": {"type": SERVER_TYPE.SuperPharm, "creds": None},
+        "server": {"type": SERVER_TYPE.SuperPharm, "creds": None, "domain_name": None},
     },
     # NIBIT
     CHAIN.Victory: {
         "id": "7290696200003",
-        "server": {"type": SERVER_TYPE.Nibit, "creds": None},
+        "server": {"type": SERVER_TYPE.Nibit, "creds": None, "domain_name": None},
     },
     CHAIN.HCohen: {
         "id": "7290455000004",
-        "server": {"type": SERVER_TYPE.Nibit, "creds": None},
+        "server": {"type": SERVER_TYPE.Nibit, "creds": None, "domain_name": None},
     },
     CHAIN.MachsaneiHashook: {
         "id": "7290661400001",
-        "server": {"type": SERVER_TYPE.Nibit, "creds": None},
+        "server": {"type": SERVER_TYPE.Nibit, "creds": None, "domain_name": None},
+    },
+    # BINA PROJECTS
+    CHAIN.Kingstore: {
+        "id": "7290058108879",
+        "server": {
+            "type": SERVER_TYPE.BinaProjects,
+            "creds": None,
+            "domain_name": "kingstore",
+        },
+    },
+    CHAIN.Maayan2000: {
+        "id": "7290058159628",
+        "server": {
+            "type": SERVER_TYPE.BinaProjects,
+            "creds": None,
+            "domain_name": "maayan2000",
+        },
+    },
+    CHAIN.GoodPharm: {
+        "id": "7290058197699",
+        "server": {
+            "type": SERVER_TYPE.BinaProjects,
+            "creds": None,
+            "domain_name": "goodpharm",
+        },
+    },
+    CHAIN.ZolVeBegadol: {
+        "id": "7290058173198",
+        "server": {
+            "type": SERVER_TYPE.BinaProjects,
+            "creds": None,
+            "domain_name": "zolvebegadol",
+        },
+    },
+    CHAIN.SuperSapir: {
+        "id": "7290058156016",
+        "server": {
+            "type": SERVER_TYPE.BinaProjects,
+            "creds": None,
+            "domain_name": "supersapir",
+        },
+    },
+    CHAIN.SuperBareket: {
+        "id": "7290875100001",
+        "server": {
+            "type": SERVER_TYPE.BinaProjects,
+            "creds": None,
+            "domain_name": "superbareket",
+        },
+    },
+    CHAIN.SuperYoda: {
+        "id": "7290058177776",
+        "server": {
+            "type": SERVER_TYPE.BinaProjects,
+            "creds": None,
+            "domain_name": "paz",
+        },
+    },
+    CHAIN.ShukHayir: {
+        "id": "7290058148776",
+        "server": {
+            "type": SERVER_TYPE.BinaProjects,
+            "creds": None,
+            "domain_name": "shuk-hayir",
+        },
+    },
+    CHAIN.ShefaBirkatHashem: {
+        "id": "7290058134977",
+        "server": {
+            "type": SERVER_TYPE.BinaProjects,
+            "creds": None,
+            "domain_name": "shefabirkathashem",
+        },
     },
 }

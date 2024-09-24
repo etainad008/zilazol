@@ -30,7 +30,7 @@ class FileServer(ABC):
         self.type = type
         self.creds = creds
 
-        self.base_url = SERVER_TYPE_DATA[self.type]["domain"]
+        self.base_url = SERVER_TYPE_DATA[self.type]["metadata"]["domain"]
 
     @staticmethod
     def check_response(res: requests.Response):
