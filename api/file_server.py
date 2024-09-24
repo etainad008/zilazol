@@ -1,3 +1,5 @@
+# TODO: Maybe we should not import everything in the global scope
+#       requests is the biggest one but used all along the file :(
 from abc import ABC, abstractmethod
 import requests
 from datetime import datetime
