@@ -3,13 +3,12 @@ import requests
 from datetime import datetime
 from bs4 import BeautifulSoup
 from lxml import etree
-import gzip
-import io
-import zipfile
 import json
+import time
 
 from constants import SERVER_TYPE, SERVER_TYPE_DATA, FILE_CATEGORY, CHAIN, CHAINS_DATA
 from data_file import DataFile
+from utils import unzip, ungzip
 
 
 class FileServer(ABC):
@@ -43,7 +42,7 @@ class FileServer(ABC):
                 f"CODE {res.status_code}: {res.request.method} to {res.request.url} failed with body: {res.request.body}"
             )
 
-    def get_category_parameter_name(self, category: FILE_CATEGORY):
+    def get_category_parameter_name(self, category: FILE_CATEGORY) -> str:
         return self.server_data["categories"][category]["parameter_name"]
 
     def is_chain_valid(self, chain: CHAIN) -> bool:
@@ -61,7 +60,7 @@ class FileServer(ABC):
         if not self.server_data["metadata"]["chain_by_subdomain"]:
             return self.base_url
 
-        return self.server_data["metadata"]["domain"].format(chain.name)
+        return self.server_data["metadata"]["domain"].format(CHAINS_DATA[chain]["server"]["domain_name"])
 
     @abstractmethod
     def get_files(
@@ -175,7 +174,7 @@ class FileServerShufersal(FileServer):
         res = requests.get(url=url_download)
         self.check_response(res)
 
-        return gzip.decompress(res.content)
+        return ungzip(res.content)
 
     def get_prices(self, amount: int) -> list:
         self.get_affinity_tokens()
@@ -204,17 +203,6 @@ class FileServerSuperPharm(FileServer):
             time = datetime.today()
 
         return time.strftime("%Y-%m-%d")
-
-    def unzip(self, zip_bytes: bytes) -> bytes:
-        stream = io.BytesIO(zip_bytes)
-
-        with zipfile.ZipFile(stream, "r") as zip:
-            file_name = zip.namelist()[0]  # We only have one file every time
-
-            with zip.open(file_name) as f:
-                file_bytes = f.read()
-
-        return file_bytes
 
     def update_categories(
         self,
@@ -272,7 +260,7 @@ class FileServerSuperPharm(FileServer):
         )
         self.check_response(res)
 
-        return self.hebrew_ascii_to_utf8(self.unzip(res.content))
+        return self.hebrew_ascii_to_utf8(unzip(res.content))
 
     def get_files(
         self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
@@ -313,7 +301,7 @@ class FileServerNibit(FileServer):
 
         return [
             DataFile(
-                gzip.decompress(self.get_file_content(file["download_link"])),
+                ungzip(self.get_file_content(file["download_link"])),
                 category=category,
                 server_type=self.type,
             )
@@ -394,9 +382,53 @@ class FileServerBinaProjects(FileServer):
         self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
     ) -> list[DataFile]:
         self.is_chain_valid(chain)
+        content = self.update_parameters(chain=chain, category=category, date=datetime.today())
+        file_list = self.get_file_list(content, amount)
+        
+        return [
+            DataFile(
+                unzip(self.get_file_content(chain, file["FileNm"])),
+                category=category,
+                server_type=self.type,
+            )
+            for file in file_list
+        ]
 
     def updated(self, category: FILE_CATEGORY) -> bool:
         pass
 
     def string_datetime_converter(self, value: str | datetime) -> str | datetime:
         pass
+    
+    def get_file_content(self, chain: CHAIN, filename: str) -> bytes:
+        params = {
+            "FileNm": filename
+        }
+        download_url = requests.get(url=self.get_subdomain_by_chain(chain) + "/Download.aspx", params=params)
+        FileServer.check_response(download_url)
+        
+        res = requests.get(url=json.loads(download_url.text)[0]["SPath"])
+        FileServer.check_response(res)
+        
+        return res.content
+    
+    def get_file_list(self, content: str, amount: int) -> list:
+        return json.loads(content)[:amount]
+    
+    def update_parameters(
+        self,
+        chain: CHAIN,
+        category: FILE_CATEGORY,
+        date: datetime = None,
+        store_id: str = "0",  # all
+    ) -> bytes:
+        params = {
+            "_": int(time.time()),
+            "WStore": store_id,
+            "WFileType": self.get_category_parameter_name(category),
+            "WDate": "" if date is None else date.strftime("%d/%m/%Y"),
+        }
+        res = requests.get(url=self.get_subdomain_by_chain(chain) + "/MainIO_Hok.aspx", params=params)
+        FileServer.check_response(res)
+
+        return res.content

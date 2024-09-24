@@ -484,7 +484,7 @@ SERVER_TYPE_DATA = {
     },
     SERVER_TYPE.BinaProjects: {
         "metadata": {
-            "domain": "https://{}.binaprojects.com/Main.aspx",
+            "domain": "https://{}.binaprojects.com",
             "chain_by_subdomain": True,
         },
         "categories": {
