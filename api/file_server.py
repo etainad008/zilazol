@@ -23,6 +23,8 @@ class FileServer(ABC):
                 return super().__new__(FileServerSuperPharm)
             case SERVER_TYPE.Nibit:
                 return super().__new__(FileServerNibit)
+            case SERVER_TYPE.BinaProjects:
+                return super().__new__(FileServerBinaProjects)
             case _:
                 raise ValueError(f"Unsupported server type: {type}")
 
@@ -30,7 +32,8 @@ class FileServer(ABC):
         self.type = type
         self.creds = creds
 
-        self.base_url = SERVER_TYPE_DATA[self.type]["metadata"]["domain"]
+        self.server_data = SERVER_TYPE_DATA[type]
+        self.base_url = self.server_data["metadata"]["domain"]
 
     @staticmethod
     def check_response(res: requests.Response):
@@ -41,7 +44,24 @@ class FileServer(ABC):
             )
 
     def get_category_parameter_name(self, category: FILE_CATEGORY):
-        return SERVER_TYPE_DATA[self.type]["categories"][category]["parameter_name"]
+        return self.server_data["categories"][category]["parameter_name"]
+
+    def is_chain_valid(self, chain: CHAIN) -> bool:
+        valid_chains = [
+            chain
+            for chain in CHAIN
+            if CHAINS_DATA[chain]["server"]["type"] == self.type
+        ]
+        if not chain in valid_chains:
+            raise ValueError(
+                f"Chain \"{chain.name}\" is not supported in \"{self.type.name}\" server; try using \"{CHAINS_DATA[chain]["server"]["type"].name}\" server instead"
+            )
+
+    def get_subdomain_by_chain(self, chain: CHAIN) -> str:
+        if not self.server_data["metadata"]["chain_by_subdomain"]:
+            return self.base_url
+
+        return self.server_data["metadata"]["domain"].format(chain.name)
 
     @abstractmethod
     def get_files(
@@ -66,6 +86,7 @@ class FileServerCerberus(FileServer):
     def get_files(
         self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
     ) -> list[DataFile]:
+        self.is_chain_valid(chain)
         pass
 
     def updated(self, category: FILE_CATEGORY) -> bool:
@@ -81,6 +102,7 @@ class FileServerShufersal(FileServer):
     def get_files(
         self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
     ) -> list[DataFile]:
+        self.is_chain_valid(chain)
         self.get_affinity_tokens()
         res = self.update_categories(category=category)
         self.check_response(res)
@@ -212,7 +234,9 @@ class FileServerSuperPharm(FileServer):
 
     def get_file_list(self, content: bytes):
         soup = BeautifulSoup(content, "lxml")
-        rows = soup.select(".file_list table tr:nth-child(n+2)")
+        rows = soup.select(
+            ".file_list table tr:nth-child(n+2)"
+        )  # each page has only 20 rows so there are no performance issues like in Nibit
         keys = [
             "sort_id",
             "name",
@@ -253,6 +277,7 @@ class FileServerSuperPharm(FileServer):
     def get_files(
         self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
     ) -> list[DataFile]:
+        self.is_chain_valid(chain)
         res, cookie = self.update_categories(category=category)
         file_list = self.get_file_list(res.content)
 
@@ -276,6 +301,7 @@ class FileServerNibit(FileServer):
     def get_files(
         self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
     ) -> list[DataFile]:
+        self.is_chain_valid(chain)
         content = self.update_parameters(
             chain,
             category,
@@ -310,7 +336,9 @@ class FileServerNibit(FileServer):
         soup = BeautifulSoup(content, "lxml")
         rows = soup.select("#download_content table", limit=1)[0].find_all(
             "tr", limit=amount + 1  # +1 is for the table's header row
-        )[1:]
+        )[
+            1:
+        ]  # this method is faster than selecting tr:nth-child(n+2)
         keys = [
             "name",
             "chain",
@@ -350,7 +378,7 @@ class FileServerNibit(FileServer):
             "fileType": self.get_category_parameter_name(category),
         }
 
-        res = requests.get(url=SERVER_TYPE_DATA[self.type]["domain"], params=params)
+        res = requests.get(url=self.base_url, params=params)
         FileServer.check_response(res)
 
         return res.content
@@ -360,8 +388,15 @@ class FileServerNibit(FileServer):
         return f"{chain_id}{subchain}{store_id}"
 
 
-if __name__ == "__main__":
-    a = FileServer(SERVER_TYPE.Shufersal, None)
-    b = a.get_files(CHAIN.Shufersal, FILE_CATEGORY.Promos, 1)
-    b[0].parse()
-    pass
+class FileServerBinaProjects(FileServer):
+
+    def get_files(
+        self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
+    ) -> list[DataFile]:
+        self.is_chain_valid(chain)
+
+    def updated(self, category: FILE_CATEGORY) -> bool:
+        pass
+
+    def string_datetime_converter(self, value: str | datetime) -> str | datetime:
+        pass
