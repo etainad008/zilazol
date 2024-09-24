@@ -1,7 +1,12 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 
-from constants import *
+from constants import (
+    ENTITY_TYPE,
+    ENTITY_TYPE_TO_FILE_CATEGORY,
+    SERVER_TYPE,
+    SERVER_TYPE_DATA,
+)
 
 
 class Entity(ABC):

@@ -39,6 +39,7 @@ FILE_CATEGORY = Enum(
     "FILE_CATEGORY", ["All", "Prices", "PricesFull", "Promos", "PromosFull", "Stores"]
 )
 ENTITY_TYPE = Enum("ENTITY_TYPE", ["Item", "Promo", "Store"])
+
 FILE_CATEGORY_TO_ENTITY_TYPE = {
     FILE_CATEGORY.All: None,
     FILE_CATEGORY.Prices: ENTITY_TYPE.Item,

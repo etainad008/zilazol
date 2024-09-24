@@ -1,4 +1,9 @@
-from constants import *
+from constants import (
+    FILE_CATEGORY,
+    SERVER_TYPE,
+    SERVER_TYPE_DATA,
+    FILE_CATEGORY_TO_ENTITY_TYPE,
+)
 from entity import Entity
 import xmltodict
 

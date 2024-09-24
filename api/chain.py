@@ -1,4 +1,4 @@
-from constants import *
+from constants import CHAIN, CHAINS_DATA
 from file_server import FileServer
 
 

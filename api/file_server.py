@@ -8,7 +8,7 @@ import io
 import zipfile
 import json
 
-from constants import *
+from constants import SERVER_TYPE, SERVER_TYPE_DATA, FILE_CATEGORY, CHAIN, CHAINS_DATA
 from data_file import DataFile
 
 
