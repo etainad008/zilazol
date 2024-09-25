@@ -1,45 +1,52 @@
-from collections import defaultdict
-from process_data import process, to_json
-
-
-def get_unique_names(chain_prices: list, common: int):
-    cache = defaultdict(set)
-
-    for prices in chain_prices:
-        try:
-            for item in prices.get("root", prices.get("Root"))["Items"]["Item"]:
-                try:
-                    item["ItemName"] = process(bytes(item["ItemName"], encoding="utf-8"))
-                    cache[(item['ItemName'], item['ItemCode'])].add(prices.get("root", prices.get("Root"))["ChainId"])
-                except:
-                    pass
-        except:
-            with open("woww.json", "wb") as f:
-                f.write(bytes(str(prices), encoding="utf-8"))
-
-    return { k: v for k, v in cache.items() if len(v) >= common }
 # i love my dad
+import psycopg
+from os import environ
 
-if __name__ == "__main__":
-    from get_cerberus_data import get_chain_prices as get_cerberus_prices, CERBERUS_CHAINS
-    from get_shufersal_data import get_prices as get_shufersal_prices
-    from get_super_pharm_data import get_prices as get_super_pharm_prices
-    from db import get_unique_names
 
-    AMOUNT = 10
+class Database:
+    def __init__(self) -> None:
+        self.connection = None
+        self.cursor = None
 
-    a = []
-    for chain_name in CERBERUS_CHAINS.keys():
-        for prices in get_cerberus_prices(chain_name, AMOUNT):
-            a.append(to_json(prices))
+    def __enter__(self):
+        self.connection = psycopg.connect(
+            dbname="zilazol",
+            user="postgres",
+            password=environ.get("POSTGRES_PASSWORD"),
+            host="localhost",
+            port="5432",
+        )
+        self.cursor = self.connection.cursor()
 
-    for prices in get_shufersal_prices(AMOUNT):
-        a.append(to_json(prices))
+        return self
 
-    # for prices in get_super_pharm_prices(AMOUNT):
-    #     a.append(to_json(prices))    
+    def __exit__(self, exc_type, exc_value, traceback):
+        if not self.cursor.closed:
+            self.cursor.close()
 
-    for i in range(1, 7):
-        names = get_unique_names(a, i)
+        if not self.connection.closed:
+            self.connection.close()
 
-        print(f"{i}: number of products is {len(names)}")
+        return False  # dont suppress exceptions
+
+    def commit(self):
+        self.connection.commit()
+
+    def execute(self, query: str, *, commit: bool = True):
+        self.cursor.execute(query=query)
+        if commit:
+            self.commit()
+
+    def execute_many(self, query: str, iterable, *, commit: bool = True):
+        self.cursor.executemany(query=query, params_seq=iterable)
+        if commit:
+            self.commit()
+
+    def get_rows(self, amount: int = -1) -> list | None:
+        if amount == -1:
+            return self.cursor.fetchall()
+
+        if amount == 1:
+            return self.cursor.fetchone()
+
+        return self.cursor.fetchmany(amount)
