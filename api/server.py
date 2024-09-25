@@ -1,13 +1,18 @@
 from flask import Flask, jsonify, request, abort
 from flask_cors import CORS
 from get_cerberus_data import get_chain_prices, CERBERUS_CHAINS
-from api.process_data import prices_to_dict
+from api.data_processor import prices_to_dict
 from db import get_unique_names
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
+CORS(
+    app,
+    resources={r"/api/*": {"origins": "http://localhost:5173"}},
+    supports_credentials=True,
+)
 
-@app.route('/api/prices', methods=['GET'])
+
+@app.route("/api/prices", methods=["GET"])
 def get_prices():
     chain = request.args.get("chain", None)
     amount = request.args.get("amount", "1")
@@ -23,20 +28,24 @@ def get_prices():
         abort(400, description="Amount equal or greater than 1")
 
     names = get_unique_names(
-        [prices_to_dict(prices) for chain_name in CERBERUS_CHAINS.keys() for prices in get_chain_prices(chain_name, 1)],
-        10
+        [
+            prices_to_dict(prices)
+            for chain_name in CERBERUS_CHAINS.keys()
+            for prices in get_chain_prices(chain_name, 1)
+        ],
+        10,
     )
 
     res = jsonify(names)
 
     # allow CORS
-    res.headers.add('Access-Control-Allow-Origin', '*')
-    res.headers.add('Access-Control-Allow-Methods', 'GET')
-    res.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-    res.headers.add('Access-Control-Allow-Credentials', 'true')
+    res.headers.add("Access-Control-Allow-Origin", "*")
+    res.headers.add("Access-Control-Allow-Methods", "GET")
+    res.headers.add("Access-Control-Allow-Headers", "Content-Type")
+    res.headers.add("Access-Control-Allow-Credentials", "true")
 
     return res
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
