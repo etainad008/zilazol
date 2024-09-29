@@ -42,27 +42,29 @@ class Parser:
                     subchains.append(
                         Entity(
                             {
-                                "id": subchain_id,
-                                "chain_id": chain_id,
-                                "name": store["SUBCHAINNAME"]
-                                or SHUFERSAL_SUBCHAIN_NAME_FALLBACK[subchain_id],
+                                self.create_subchain(
+                                    subchain_id,
+                                    chain_id,
+                                    store["SUBCHAINNAME"]
+                                    or SHUFERSAL_SUBCHAIN_NAME_FALLBACK[subchain_id],
+                                )
                             }
                         )
                     )
 
                 stores.append(
                     Entity(
-                        {
-                            "id": self.normalize_number(store["STOREID"]),
-                            "chain_id": chain_id,
-                            "subchain_id": self.normalize_number(store["SUBCHAINID"]),
-                            "bikoret_number": self.normalize_number(store["BIKORETNO"]),
-                            "type": store["STORETYPE"],
-                            "name": store["STORENAME"],
-                            "address": store["ADDRESS"],
-                            "city": store["CITY"],
-                            "zip_code": self.normalize_number(store["ZIPCODE"]),
-                        }
+                        self.create_store(
+                            store["STOREID"],
+                            chain_id,
+                            store["SUBCHAINID"],
+                            store["BIKORETNO"],
+                            store["STORETYPE"],
+                            store["STORENAME"],
+                            store["ADDRESS"],
+                            store["CITY"],
+                            store["ZIPCODE"],
+                        )
                     )
                 )
 
@@ -79,11 +81,9 @@ class Parser:
             for subchain in subchain_list:
                 subchains.append(
                     Entity(
-                        {
-                            "id": subchain["SubChainId"],
-                            "chain_id": chain_id,
-                            "name": subchain["SubChainName"],
-                        }
+                        self.create_subchain(
+                            subchain["SubChainId"], chain_id, subchain["SubChainName"]
+                        )
                     )
                 )
                 store_list = subchain["Stores"]["Store"]
@@ -93,23 +93,19 @@ class Parser:
                 stores.extend(
                     [
                         Entity(
-                            {
-                                "id": self.normalize_number(store["StoreId"]),
-                                "chain_id": chain_id,
-                                "subchain_id": self.normalize_number(
-                                    subchain["SubChainId"]
-                                ),
-                                "bikoret_number": self.normalize_number(
-                                    store["BikoretNo"]
-                                ),
-                                "type": store["StoreType"],
-                                "name": store["StoreName"],
-                                "address": store["Address"],
-                                "city": store["City"],
-                                "zip_code": self.normalize_number(store["ZipCode"]),
-                            }
+                            self.create_store(
+                                store["StoreId"],
+                                chain_id,
+                                subchain["SubChainId"],
+                                store["BikoretNo"],
+                                store["StoreType"],
+                                store["StoreName"],
+                                store["Address"],
+                                store["City"],
+                                store["ZipCode"],
+                            )
                         )
-                        for store in store_list
+                        for store in store_lists
                     ]
                 )
 
@@ -129,27 +125,27 @@ class Parser:
                     subchain_cache.add(subchain_id)
                     subchains.append(
                         Entity(
-                            {
-                                "id": subchain_id,
-                                "chain_id": chain_id,
-                                "name": store["SubChainName"],
-                            }
+                            self.create_subchain(
+                                subchain_id,
+                                chain_id,
+                                store["SubChainName"],
+                            )
                         )
                     )
 
                 stores.append(
                     Entity(
-                        {
-                            "id": self.normalize_number(store["StoreID"]),
-                            "chain_id": chain_id,
-                            "subchain_id": self.normalize_number(store["SubChainID"]),
-                            "bikoret_number": self.normalize_number(store["BikoretNo"]),
-                            "type": store["StoreType"],
-                            "name": store["StoreName"],
-                            "address": store["Address"],
-                            "city": store["City"],
-                            "zip_code": self.normalize_number(store["ZIPCode"]),
-                        }
+                        self.create_store(
+                            store["StoreID"],
+                            chain_id,
+                            store["SubChainID"],
+                            store["BikoretNo"],
+                            store["StoreType"],
+                            store["StoreName"],
+                            store["Address"],
+                            store["City"],
+                            store["ZIPCode"],
+                        )
                     )
                 )
 
@@ -166,11 +162,11 @@ class Parser:
             for subchain in subchain_list:
                 subchains.append(
                     Entity(
-                        {
-                            "id": subchain["SubChainId"],
-                            "chain_id": chain_id,
-                            "name": subchain["SubChainName"],
-                        }
+                        self.create_subchain(
+                            subchain["SubChainId"],
+                            chain_id,
+                            subchain["SubChainName"],
+                        )
                     )
                 )
                 store_list = subchain["Stores"]["Store"]
@@ -180,21 +176,17 @@ class Parser:
                 stores.extend(
                     [
                         Entity(
-                            {
-                                "id": self.normalize_number(store["StoreId"]),
-                                "chain_id": chain_id,
-                                "subchain_id": self.normalize_number(
-                                    subchain["SubChainId"]
-                                ),
-                                "bikoret_number": self.normalize_number(
-                                    store["BikoretNo"]
-                                ),
-                                "type": store["StoreType"],
-                                "name": store["StoreName"],
-                                "address": store["Address"],
-                                "city": store["City"],
-                                "zip_code": self.normalize_number(store["ZipCode"]),
-                            }
+                            self.create_store(
+                                store["StoreId"],
+                                chain_id,
+                                subchain["SubChainId"],
+                                store["BikoretNo"],
+                                store["StoreType"],
+                                store["StoreName"],
+                                store["Address"],
+                                store["City"],
+                                store["ZipCode"],
+                            )
                         )
                         for store in store_list
                     ]
@@ -209,37 +201,66 @@ class Parser:
                 store_list = [store_list]
 
             chain_id = root["ChainId"]
-            subchain_id = self.normalize_number(root["SubChainId"])
+            subchain_id = root["SubChainId"]
 
             stores = [
                 Entity(
-                    {
-                        "id": self.normalize_number(store["StoreId"]),
-                        "chain_id": chain_id,
-                        "subchain_id": subchain_id,
-                        "bikoret_number": self.normalize_number(store["BikoretNo"]),
-                        "type": store["StoreType"],
-                        "name": store["StoreName"],
-                        "address": store["Address"],
-                        "city": store["City"],
-                        "zip_code": self.normalize_number(store["ZipCode"]),
-                    }
+                    self.create_store(
+                        store["StoreId"],
+                        chain_id,
+                        subchain_id,
+                        store["BikoretNo"],
+                        store["StoreType"],
+                        store["StoreName"],
+                        store["Address"],
+                        store["City"],
+                        store["ZipCode"],
+                    )
                 )
                 for store in store_list
             ]
 
             return (
-                Entity(
-                    [
-                        {
-                            "id": subchain_id,
-                            "chain_id": chain_id,
-                            "name": store_list[0]["SubChainName"],
-                        }
-                    ],
-                ),
+                [
+                    Entity(
+                        self.create_subchain(
+                            subchain_id, chain_id, store_list[0]["SubChainName"]
+                        ),
+                    )
+                ],
                 stores,
             )
+
+    def create_store(
+        self,
+        id: str,
+        chain_id: str,
+        subchain_id: str,
+        bikoret_number: str,
+        type: str,
+        name: str,
+        address: str,
+        city: str,
+        zip_code: str,
+    ) -> dict:
+        return {
+            "id": self.normalize_number(id),
+            "chain_id": chain_id,
+            "subchain_id": self.normalize_number(subchain_id),
+            "bikoret_number": self.normalize_number(bikoret_number),
+            "type": type,
+            "name": name,
+            "address": address,
+            "city": city,
+            "zip_code": self.normalize_number(zip_code),
+        }
+
+    def create_subchain(self, id: str, chain_id: str, name: str) -> dict:
+        return {
+            "id": self.normalize_number(id),
+            "chain_id": chain_id,
+            "name": name,
+        }
 
     def normalize_number(self, number: str) -> str:
         return str(int(number))
