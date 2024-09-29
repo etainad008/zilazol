@@ -600,7 +600,7 @@ CHAINS_DATA = {
         },
     },
     CHAIN.Yohananof: {
-        "id": "7290100700006",
+        "id": "7290803800003",
         "server": {
             "type": SERVER_TYPE.Cerberus,
             "creds": {
