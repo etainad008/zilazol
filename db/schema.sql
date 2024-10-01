@@ -12,7 +12,7 @@ CREATE TYPE UNIT AS ENUM (
 );
 
 CREATE TABLE IF NOT EXISTS Chain (
-    id VARCHAR(16) PRIMARY KEY,
+    id CHAR(13) PRIMARY KEY,
     name VARCHAR(64) UNIQUE NOT NULL
 );
 
@@ -31,9 +31,9 @@ CREATE TABLE IF NOT EXISTS Store (
     subchain_id VARCHAR(8) NOT NULL,
     bikoret_number CHAR(1) NOT NULL,
     type STORE_TYPE NOT NULL,
-    name VARCHAR(32) NOT NULL,
-    address VARCHAR(32) NOT NULL,
-    city VARCHAR(32) NOT NULL,
+    name VARCHAR(64) NOT NULL,
+    address VARCHAR(64),
+    city VARCHAR(32),
     zip_code CHAR(7),
 
     PRIMARY KEY (id, chain_id, subchain_id),

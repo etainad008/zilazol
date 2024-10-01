@@ -806,3 +806,6 @@ CHAINS_DATA = {
         },
     },
 }
+
+# DB
+TABLE = Enum("TABLE", ["Chain", "Subchain", "Store", "Item", "Item_Instance"])

@@ -2,6 +2,9 @@
 import psycopg
 from os import environ
 
+from entity import Entity
+from constants import TABLE
+
 
 class Database:
     def __init__(self) -> None:
@@ -50,3 +53,10 @@ class Database:
             return self.cursor.fetchone()
 
         return self.cursor.fetchmany(amount)
+
+    def insert_entities(self, table: TABLE, entities: list[Entity]):
+        value_format = ", ".join(["%s" for _ in range(len(entities[0]))])
+        self.execute_many(
+            f"""INSERT INTO {table.name} VALUES ({value_format})""",
+            [entity.to_value_tuple() for entity in entities],
+        )
