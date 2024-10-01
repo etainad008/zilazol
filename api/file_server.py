@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 from lxml import etree
 import json
 import time
+import re
 
 from constants import SERVER_TYPE, SERVER_TYPE_DATA, FILE_CATEGORY, CHAIN, CHAINS_DATA
 from data_file import DataFile
@@ -14,7 +15,7 @@ from utils import unzip, ungzip
 
 
 class FileServer(ABC):
-    def __new__(cls, type: SERVER_TYPE, creds: dict) -> "FileServer":
+    def __new__(cls, type: SERVER_TYPE) -> "FileServer":
         match type:
             case SERVER_TYPE.Cerberus:
                 return super().__new__(FileServerCerberus)
@@ -29,9 +30,8 @@ class FileServer(ABC):
             case _:
                 raise ValueError(f"Unsupported server type: {type}")
 
-    def __init__(self, type: SERVER_TYPE, creds: dict) -> None:
+    def __init__(self, type: SERVER_TYPE) -> None:
         self.type = type
-        self.creds = creds
 
         self.server_data = SERVER_TYPE_DATA[type]
         self.base_url = self.server_data["metadata"]["domain"]
@@ -47,7 +47,7 @@ class FileServer(ABC):
     def get_category_parameter_name(self, category: FILE_CATEGORY) -> str:
         return self.server_data["categories"][category]["parameter_name"]
 
-    def is_chain_valid(self, chain: CHAIN) -> bool:
+    def verify_chain(self, chain: CHAIN) -> bool:
         valid_chains = [
             chain
             for chain in CHAIN
@@ -94,15 +94,15 @@ class FileServerCerberus(FileServer):
     def get_files(
         self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
     ) -> list[DataFile]:
-        self.is_chain_valid(chain)
+        self.verify_chain(chain)
         file_list, cftp = self.get_file_list(chain, category, amount)
         return [
             DataFile(
-                self.get_file_content(
+                content=self.get_file_content(
                     file["fname"], category == FILE_CATEGORY.Stores, cftp
                 ),
-                chain,
-                category,
+                chain=chain,
+                category=category,
             )
             for file in file_list
         ]
@@ -211,7 +211,7 @@ class FileServerShufersal(FileServer):
     def get_files(
         self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
     ) -> list[DataFile]:
-        self.is_chain_valid(chain)
+        self.verify_chain(chain)
         self.get_affinity_tokens()
         res = self.update_categories(category=category)
         self.check_response(res)
@@ -219,7 +219,9 @@ class FileServerShufersal(FileServer):
 
         return [
             DataFile(
-                chain, self.get_file_content(file["download_link"]), category=category
+                content=self.get_file_content(file["download_link"]),
+                chain=chain,
+                category=category,
             )
             for file in file_list[:amount]
         ]
@@ -368,19 +370,32 @@ class FileServerSuperPharm(FileServer):
         )
         self.check_response(res)
 
-        return self.hebrew_ascii_to_utf8(unzip(res.content))
+        unzipped = unzip(res.content)
+        encoding = self.get_encoding(unzipped)
+
+        if encoding == b"ISO-8859-8":
+            return self.hebrew_ascii_to_utf8(unzipped)
+        elif encoding == b"UTF-8":
+            return unzipped
+
+    def get_encoding(self, content: bytes) -> str:
+        match = re.search(rb'encoding=["\'](.*?)["\']', content)
+        if match:
+            return match.group(1).upper()
+        else:
+            return None
 
     def get_files(
         self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
     ) -> list[DataFile]:
-        self.is_chain_valid(chain)
+        self.verify_chain(chain)
         res, cookie = self.update_categories(category=category)
         file_list = self.get_file_list(res.content)
 
         return [
             DataFile(
-                chain,
-                self.get_file_content(file["download_link"], cookie),
+                content=self.get_file_content(file["download_link"], cookie),
+                chain=chain,
                 category=category,
             )
             for file in file_list[:amount]
@@ -397,7 +412,7 @@ class FileServerNibit(FileServer):
     def get_files(
         self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
     ) -> list[DataFile]:
-        self.is_chain_valid(chain)
+        self.verify_chain(chain)
         content = self.update_parameters(
             chain,
             category,
@@ -409,8 +424,8 @@ class FileServerNibit(FileServer):
 
         return [
             DataFile(
-                chain,
-                ungzip(self.get_file_content(file["download_link"])),
+                content=ungzip(self.get_file_content(file["download_link"])),
+                chain=chain,
                 category=category,
             )
             for file in file_list
@@ -489,15 +504,15 @@ class FileServerBinaProjects(FileServer):
     def get_files(
         self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
     ) -> list[DataFile]:
-        self.is_chain_valid(chain)
+        self.verify_chain(chain)
         file_list = self.update_parameters(
             chain=chain, category=category, date=datetime.today()
         )
 
         return [
             DataFile(
-                chain,
-                unzip(self.get_file_content(chain, file["FileNm"])),
+                content=unzip(self.get_file_content(chain, file["FileNm"])),
+                chain=chain,
                 category=category,
             )
             for file in file_list
