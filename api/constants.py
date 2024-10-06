@@ -809,3 +809,40 @@ CHAINS_DATA = {
 
 # DB
 TABLE = Enum("TABLE", ["Chain", "Subchain", "Store", "Item", "Item_Instance"])
+
+UNIT = Enum(
+    "UNIT",
+    {
+        "Unknown": "unknown",
+        "Unit": "unit",
+        "Milligram": "milligram",
+        "Gram": "gram",
+        "Kilogram": "kilogram",
+        "Milliliter": "milliliter",
+        "Liter": "liter",
+        "Millimeter": "millimeter",
+        "Centimeter": "centimeter",
+        "Meter": "meter",
+    },
+)
+
+STORE_TYPE = Enum(
+    "STORE_TYPE",
+    {
+        "Physical": "physical",
+        "Online": "online",
+        "PhysicalAndOnline": "physical_and_online",
+    },
+)
+
+STORE_TYPE_MAP = {
+    "1": STORE_TYPE.Physical,
+    "2": STORE_TYPE.Online,
+    "3": STORE_TYPE.PhysicalAndOnline,
+}
+
+ITEM_TYPE = Enum("ITEM_TYPE", {"Proprietary": "proprietary", "Normal": "normal"})
+
+ITEM_TYPE_MAP = {"0": ITEM_TYPE.Proprietary, "1": ITEM_TYPE.Normal}
+
+ITEM_STATUS = Enum("ITEM_STATUS", {"Removed": "0", "Updated": "1", "Added": "2"})

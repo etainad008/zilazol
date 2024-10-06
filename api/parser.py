@@ -1,11 +1,23 @@
 from abc import ABC, abstractmethod
 import xmltodict
+import re
+from collections import defaultdict
+import json
+import timeit
 
 from entity import Entity
 from constants import *
 from data_file import DataFile
 from file_server import FileServer
-from database import Database
+
+# from database import Database
+
+whitespace_normalizer = re.compile(r"\s+")
+
+
+def normalize_whitespace(text: str) -> str | None:
+    return whitespace_normalizer.sub(" ", text.strip()) if text else None
+
 
 SHUFERSAL_SUBCHAIN_NAME_FALLBACK = {
     "1": "שופרסל שלי",
@@ -17,14 +29,6 @@ SHUFERSAL_SUBCHAIN_NAME_FALLBACK = {
     "4": "שופרסל דיל אקסטרא",
     "18": "גוד מרקט",
     "3": "שערי רווחה",
-}
-
-STORE_TYPE = {
-    "1": "physical",
-    "2": "online",
-    "3": "physical_and_online",
-    None: "physical",
-    "": "physical",
 }
 
 
@@ -57,8 +61,35 @@ class ParserCerberus(BaseParser):
 
     def parse_items_file(
         self, file: DataFile, data: dict, server_type: SERVER_TYPE, chain_id: str
-    ) -> list[Entity]:
-        pass
+    ) -> list[dict]:
+        root = data.get("Root", data.get("root"))
+        item_list = root["Items"]["Item"]
+        subchain_id = root["SubChainId"]
+        store_id = root["StoreId"]
+
+        return [
+            ParserUtils.create_item(
+                chain_id,
+                subchain_id,
+                store_id,
+                item["ItemCode"],
+                item["ItemType"],
+                item["ItemName"],
+                item["ManufacturerName"],
+                item["ManufactureCountry"],
+                item["ManufacturerItemDescription"],
+                item["UnitQty"],
+                item["Quantity"],
+                item["bIsWeighted"],
+                item["UnitOfMeasure"],
+                item["UnitOfMeasurePrice"],
+                item["QtyInPackage"],
+                item["ItemStatus"],
+                item["ItemPrice"],
+                item["AllowDiscount"],
+            )
+            for item in item_list
+        ]
 
     def parse_promos_file(
         self, file: DataFile, data: dict, server_type: SERVER_TYPE, chain_id: str
@@ -340,11 +371,10 @@ class Parser:
             SERVER_TYPE.BinaProjects: ParserBinaProjects(),
         }
 
-    def parse(self, file: DataFile) -> list[Entity] | tuple[list[Entity], list[Entity]]:
+    def parse(
+        self, file: DataFile
+    ) -> list[Entity] | tuple[list[Entity], list[Entity]] | list[dict]:
         """Returns all the entities in the file."""
-        if file.content is None:
-            return ([], [])
-
         data = xmltodict.parse(file.content)
         server_type = CHAINS_DATA[file.chain]["server"]["type"]
         chain_id = CHAINS_DATA[file.chain]["id"]
@@ -378,12 +408,12 @@ class ParserUtils:
             "id": ParserUtils.normalize_number(id),
             "chain_id": chain_id,
             "subchain_id": ParserUtils.normalize_number(subchain_id),
-            "bikoret_number": ParserUtils.normalize_number(bikoret_number)[0],
-            "type": STORE_TYPE[ParserUtils.normalize_number(type)],
+            "bikoret_number": ParserUtils.parse_store_bikoret_number(bikoret_number),
+            "type": ParserUtils.parse_store_type(type).value,
             "name": name or "",
-            "address": address or "",
-            "city": city or "",
-            "zip_code": ParserUtils.normalize_number(zip_code),
+            "address": address or None,
+            "city": city or None,
+            "zip_code": ParserUtils.parse_store_zip_code(zip_code),
         }
 
     @staticmethod
@@ -395,31 +425,234 @@ class ParserUtils:
         }
 
     @staticmethod
-    def normalize_number(number: str) -> str:
+    def create_item(
+        chain_id: str,
+        subchain_id: str,
+        store_id: str,
+        code: str,
+        type: str,
+        name: str,
+        manufacturer_name: str,
+        manufacture_country: str,
+        manufacturer_item_description: str,
+        quantity_unit: str,
+        quantity: str,
+        is_weighted: str,
+        unit_of_measure: str,
+        unit_of_measure_price: str,
+        quantity_in_package: str,
+        status: str,
+        price: str,
+        allow_discount: str,
+    ):
+        return {
+            "chain_id": chain_id,
+            "subchain_id": ParserUtils.normalize_number(subchain_id),
+            "store_id": ParserUtils.normalize_number(store_id),
+            "code": normalize_whitespace(code),
+            "type": ParserUtils.parse_item_type(type),
+            "name": normalize_whitespace(name),
+            "manufacturer_name": normalize_whitespace(manufacturer_name),
+            "manufacture_country": normalize_whitespace(manufacture_country),
+            "manufacturer_item_description": normalize_whitespace(
+                manufacturer_item_description
+            ),
+            "quantity_unit": ParserUtils.parse_unit(quantity_unit),
+            "quantity": ParserUtils.parse_decimal(quantity),
+            "is_weighted": ParserUtils.parse_bool(is_weighted),
+            "unit_of_measure": normalize_whitespace(unit_of_measure),
+            "unit_of_measure_price": ParserUtils.parse_decimal(unit_of_measure_price),
+            "quantity_in_package": ParserUtils.parse_number(quantity_in_package),
+            "status": ParserUtils.parse_item_status(status),
+            "price": ParserUtils.parse_decimal(price),
+            "allow_discount": ParserUtils.parse_bool(allow_discount),
+        }
+
+    @staticmethod
+    def parse_bool(bool: str) -> bool:
+        bool = bool.strip()
+        if bool == "1":
+            return True
+
+        if bool == "0":
+            return False
+
+        raise ValueError("Boolean values must be 0 or 1")
+
+    @staticmethod
+    def normalize_number(number: str) -> str | None:
         try:
             return str(int(number))
+        except ValueError:
+            return None
+
+    @staticmethod
+    def normalize_decimal(decimal: str) -> str | None:
+        try:
+            return str(float(decimal))
+        except ValueError:
+            return None
+
+    @staticmethod
+    def parse_store_type(type: str) -> STORE_TYPE:
+        return STORE_TYPE_MAP.get(
+            ParserUtils.normalize_number(type), STORE_TYPE.Physical
+        )
+
+    @staticmethod
+    def parse_store_bikoret_number(bikoret_number: str) -> str:
+        return ParserUtils.normalize_number(bikoret_number) or "0"
+
+    @staticmethod
+    def parse_store_zip_code(zip_code: str) -> str:
+        return (
+            zip_code
+            if zip_code and (zip_code.isdigit() and len(zip_code) == 7)
+            else None
+        )
+
+    @staticmethod
+    def parse_item_type(type: str) -> ITEM_TYPE:
+        match ParserUtils.normalize_number(type):
+            case "0":
+                return ITEM_TYPE.Proprietary
+            case "1":
+                return ITEM_TYPE.Normal
+
+        return ITEM_TYPE.Normal
+
+    @staticmethod
+    def parse_item_status(status: str) -> ITEM_STATUS:
+        match ParserUtils.normalize_number(status):
+            case ITEM_STATUS.Updated:
+                return ITEM_STATUS.Updated
+            case ITEM_STATUS.Removed:
+                return ITEM_STATUS.Removed
+            case ITEM_STATUS.Added:
+                return ITEM_STATUS.Added
+            case _:
+                return ITEM_STATUS.Updated
+
+    @staticmethod
+    def parse_unit(unit: str) -> UNIT:
+        match unit:
+            case "גרמים" | "גרם" | "גר" | "ג":
+                return UNIT.Gram
+            case "Unknown" | "לא ידוע" | "לא מנהל יחידת מידה":
+                return UNIT.Unknown
+            case "מיליליטרים" | "מיל" | "מיליליטר" | "מל" | 'מ"ל' | "מ'ל":
+                return UNIT.Milliliter
+            case "ליטרים" | "ליטר" | "ל":
+                return UNIT.Liter
+            case "קילוגרמים" | "קילוגרם" | "קילו" | "ק'ג" | 'ק"ג':
+                return UNIT.Kilogram
+            case "יחידות" | "יחידה" | "יח'" | "יח" | 'י"ח' | "י'ח":
+                return UNIT.Unit
+            case "מטרים":
+                return UNIT.Meter
+
+        if "יח" in unit:
+            return UNIT.Unit
+
+        return UNIT.Unit
+
+        # raise ValueError(f"Unit {unit} is unknown")
+
+    @staticmethod
+    def parse_number(number: str) -> int:
+        try:
+            return int(ParserUtils.normalize_number(number))
         except:
-            return ""
+            return None
+
+    @staticmethod
+    def parse_decimal(decimal: str) -> float:
+        try:
+            return float(ParserUtils.normalize_decimal(decimal))
+        except:
+            return None
+
+
+class EnumEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Enum):
+            return obj.name  # or obj.value if you prefer
+        return super().default(obj)
+
+
+def enum_decoder(dct):
+    for key, value in dct.items():
+        if isinstance(value, str):  # Check if the value is a string
+            # Check which enum it belongs to and decode it
+            for e in [
+                CHAIN,
+                SERVER_TYPE,
+                FILE_CATEGORY,
+                ENTITY_TYPE,
+                TABLE,
+                UNIT,
+                STORE_TYPE,
+                ITEM_TYPE,
+                ITEM_STATUS,
+            ]:
+                try:
+                    dct[key] = e[value]  # Add more Enums as needed
+                except KeyError:
+                    pass  # If the value doesn't match an Enum member, keep it as is
+    return dct
 
 
 if __name__ == "__main__":
-    servers = {server_type: FileServer(server_type) for server_type in SERVER_TYPE}
-    store_files = {
-        chain: servers[CHAINS_DATA[chain]["server"]["type"]].get_files(
-            chain=chain, category=FILE_CATEGORY.Stores, amount=1
-        )
-        for chain in CHAIN
-    }
+    # servers = {server_type: FileServer(server_type) for server_type in SERVER_TYPE}
+    # price_files = {
+    #     chain: servers[CHAINS_DATA[chain]["server"]["type"]].get_files(
+    #         chain=chain, category=FILE_CATEGORY.PricesFull, amount=1
+    #     )
+    #     for chain in CHAIN
+    #     if CHAINS_DATA[chain]["server"]["type"] == SERVER_TYPE.Cerberus
+    #     and not chain in [CHAIN.HaziHinam]
+    # }
 
-    subchains = []
-    stores = []
-    parser = Parser()
-    with Database() as db:
-        for file_list in store_files.values():
-            if len(file_list) > 0:
-                curr_subchains, curr_stores = parser.parse(file_list[0])
-                subchains.extend(curr_subchains)
-                stores.extend(curr_stores)
+    # items_dict = defaultdict(list)
+    # parser = Parser()
 
-        db.insert_entities(TABLE.Subchain, subchains)
-        db.insert_entities(TABLE.Store, stores)
+    # for chain in price_files:
+    #     for file in price_files[chain]:
+    #         items = parser.parse(file)
+    #         for item in items:
+    #             items_dict[item["code"]].append(item)
+
+    # items_dict = {code: l for code, l in items_dict.items() if len(l) > 4}
+
+    # print("Parsed!")
+
+    # Writing to a file
+    # with open("output.json", "w", encoding="utf-8") as file:
+    #     json.dump(
+    #         items_dict, file, cls=EnumEncoder, ensure_ascii=False, indent=4
+    #     )  # indent=4 adds pretty formatting
+
+    with open("output.json", "r", encoding="utf-8") as file:
+        items_dict = json.load(file, object_hook=enum_decoder)
+
+    items_dict = {code: l for code, l in items_dict.items() if len(l) > 9}
+
+    cottage = items_dict["7290004127336"]
+
+    names = [i["name"] for i in cottage]
+
+    pass
+
+    # with Database() as db:
+    #     for file_list in store_files.values():
+    #         if len(file_list) > 0:
+    #             curr_subchains, curr_stores = parser.parse(file_list[0])
+    #             subchains.extend(curr_subchains)
+    #             stores.extend(curr_stores)
+
+    #     db.insert_entities(TABLE.Subchain, subchains)
+    #     db.insert_entities(TABLE.Store, stores)
+
+    # a = servers[SERVER_TYPE.BinaProjects].get_files(
+    #     chain=CHAIN.SuperYoda, category=FILE_CATEGORY.Stores, amount=1
+    # )

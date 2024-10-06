@@ -95,7 +95,7 @@ class FileServerCerberus(FileServer):
         self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
     ) -> list[DataFile]:
         self.verify_chain(chain)
-        file_list, cftp = self.get_file_list(chain, category, amount)
+        file_list, cftp = self.get_file_list(chain, category, amount, date=None)
         return [
             DataFile(
                 content=self.get_file_content(
