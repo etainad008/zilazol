@@ -9,14 +9,9 @@ from entity import Entity
 from constants import *
 from data_file import DataFile
 from file_server import FileServer
+from process import derive_name, normalize_whitespace
 
 # from database import Database
-
-whitespace_normalizer = re.compile(r"\s+")
-
-
-def normalize_whitespace(text: str) -> str | None:
-    return whitespace_normalizer.sub(" ", text.strip()) if text else None
 
 
 SHUFERSAL_SUBCHAIN_NAME_FALLBACK = {
@@ -632,16 +627,22 @@ if __name__ == "__main__":
     #         items_dict, file, cls=EnumEncoder, ensure_ascii=False, indent=4
     #     )  # indent=4 adds pretty formatting
 
-    with open("output.json", "r", encoding="utf-8") as file:
+    with open(r"D:\projects\zilazol\output.json", "r", encoding="utf-8") as file:
         items_dict = json.load(file, object_hook=enum_decoder)
 
-    items_dict = {code: l for code, l in items_dict.items() if len(l) > 9}
+    items_dict = {code: l for code, l in items_dict.items() if len(l) > 1}
 
-    cottage = items_dict["7290004127336"]
+    print("Parsed")
 
-    names = [i["name"] for i in cottage]
+    count = 0
+    print(f"Parsing {len(items_dict)} items.")
+    for code in items_dict:
+        derived_name = derive_name([item["name"] for item in items_dict[code]])
+        count += 1
+        if count % 100 == 0:
+            print(f"{count}...: {derived_name}")
 
-    pass
+    print("\nDone")
 
     # with Database() as db:
     #     for file_list in store_files.values():
