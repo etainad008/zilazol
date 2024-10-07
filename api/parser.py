@@ -1,17 +1,13 @@
 from abc import ABC, abstractmethod
 import xmltodict
-import re
 from collections import defaultdict
 import json
-import timeit
 
 from entity import Entity
 from constants import *
 from data_file import DataFile
 from file_server import FileServer
 from process import derive_name, normalize_whitespace
-
-# from database import Database
 
 
 SHUFERSAL_SUBCHAIN_NAME_FALLBACK = {
@@ -551,8 +547,6 @@ class ParserUtils:
 
         return UNIT.Unit
 
-        # raise ValueError(f"Unit {unit} is unknown")
-
     @staticmethod
     def parse_number(number: str) -> int:
         try:
@@ -604,33 +598,47 @@ if __name__ == "__main__":
     #         chain=chain, category=FILE_CATEGORY.PricesFull, amount=1
     #     )
     #     for chain in CHAIN
-    #     if CHAINS_DATA[chain]["server"]["type"] == SERVER_TYPE.Cerberus
-    #     and not chain in [CHAIN.HaziHinam]
+    #     # if CHAINS_DATA[chain]["server"]["type"] == SERVER_TYPE.Cerberus
     # }
+
+    # price_files = {}
+    # for chain in CHAIN:
+    #     if chain in [CHAIN.HaziHinam]:
+    #         continue
+
+    #     print(f"Fetching data from {chain}...")
+
+    #     price_files[chain] = servers[CHAINS_DATA[chain]["server"]["type"]].get_files(
+    #         chain=chain, category=FILE_CATEGORY.PricesFull, amount=1
+    #     )
+
+    #     print(f"Finished fetching data from {chain}.")
 
     # items_dict = defaultdict(list)
     # parser = Parser()
 
     # for chain in price_files:
-    #     for file in price_files[chain]:
-    #         items = parser.parse(file)
-    #         for item in items:
-    #             items_dict[item["code"]].append(item)
+    #     print(f"Parsing {chain}...")
 
-    # items_dict = {code: l for code, l in items_dict.items() if len(l) > 4}
+    #     try:
+    #         for file in price_files[chain]:
+    #             items = parser.parse(file)
+    #             for item in items:
+    #                 items_dict[item["code"]].append(item)
+    #     except:
+    #         pass
+
+    #     print(f"Finished parsing {chain}")
+
+    # items_dict = {code: l for code, l in items_dict.items() if len(l) > 3}
 
     # print("Parsed!")
 
-    # Writing to a file
     # with open("output.json", "w", encoding="utf-8") as file:
-    #     json.dump(
-    #         items_dict, file, cls=EnumEncoder, ensure_ascii=False, indent=4
-    #     )  # indent=4 adds pretty formatting
+    #     json.dump(items_dict, file, cls=EnumEncoder, ensure_ascii=False, indent=4)
 
     with open(r"D:\projects\zilazol\output.json", "r", encoding="utf-8") as file:
         items_dict = json.load(file, object_hook=enum_decoder)
-
-    items_dict = {code: l for code, l in items_dict.items() if len(l) > 1}
 
     print("Parsed")
 
@@ -639,8 +647,9 @@ if __name__ == "__main__":
     for code in items_dict:
         derived_name = derive_name([item["name"] for item in items_dict[code]])
         count += 1
+        print(f"{count}...: {derived_name}")
         if count % 100 == 0:
-            print(f"{count}...: {derived_name}")
+            break
 
     print("\nDone")
 
