@@ -380,7 +380,34 @@ class ParserBinaProjects(BaseParser):
     def parse_items_file(
         self, file: DataFile, data: dict, server_type: SERVER_TYPE, chain_id: str
     ) -> list[Entity]:
-        pass
+        root = data["Root"]
+        item_list = root["Items"]["Item"]
+        subchain_id = root["SubChainId"]
+        store_id = root["StoreId"]
+
+        return [
+            ParserUtils.create_item(
+                chain_id,
+                subchain_id,
+                store_id,
+                item["ItemCode"],
+                item["ItemType"],
+                item["ItemNm"],
+                item["ManufacturerName"],
+                item["ManufactureCountry"],
+                item["ManufacturerItemDescription"],
+                item["UnitQty"],
+                item["Quantity"],
+                item["bIsWeighted"],
+                item["UnitOfMeasure"],
+                item["UnitOfMeasurePrice"],
+                item["QtyInPackage"],
+                item["ItemStatus"],
+                item["ItemPrice"],
+                item["AllowDiscount"],
+            )
+            for item in item_list
+        ]
 
     def parse_promos_file(
         self, file: DataFile, data: dict, server_type: SERVER_TYPE, chain_id: str
@@ -682,11 +709,11 @@ if __name__ == "__main__":
             chain=chain, category=FILE_CATEGORY.PricesFull, amount=1
         )
         for chain in CHAIN
-        if CHAINS_DATA[chain]["server"]["type"] == SERVER_TYPE.Nibit
+        if CHAINS_DATA[chain]["server"]["type"] == SERVER_TYPE.BinaProjects
     }
 
     parser = Parser()
-    a = parser.parse(price_files[CHAIN.Victory][0])
+    a = parser.parse(price_files[CHAIN.ZolVeBegadol][0])
 
     pass
 
