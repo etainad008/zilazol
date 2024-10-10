@@ -298,7 +298,34 @@ class ParserNibit(BaseParser):
     def parse_items_file(
         self, file: DataFile, data: dict, server_type: SERVER_TYPE, chain_id: str
     ) -> list[Entity]:
-        pass
+        root = data["Prices"]
+        item_list = root["Products"]["Product"]
+        subchain_id = root["SubChainID"]
+        store_id = root["StoreID"]
+
+        return [
+            ParserUtils.create_item(
+                chain_id,
+                subchain_id,
+                store_id,
+                item["ItemCode"],
+                item["ItemType"],
+                item["ItemName"],
+                item["ManufactureName"],
+                item["ManufactureCountry"],
+                item["ManufactureItemDescription"],
+                item["UnitQty"],
+                item["Quantity"],
+                item["BisWeighted"],
+                item["UnitMeasure"],
+                item["UnitOfMeasurePrice"],
+                item["QtyInPackage"],
+                item["itemStatus"],
+                item["ItemPrice"],
+                item["AllowDiscount"],
+            )
+            for item in item_list
+        ]
 
     def parse_promos_file(
         self, file: DataFile, data: dict, server_type: SERVER_TYPE, chain_id: str
@@ -655,11 +682,11 @@ if __name__ == "__main__":
             chain=chain, category=FILE_CATEGORY.PricesFull, amount=1
         )
         for chain in CHAIN
-        if CHAINS_DATA[chain]["server"]["type"] == SERVER_TYPE.SuperPharm
+        if CHAINS_DATA[chain]["server"]["type"] == SERVER_TYPE.Nibit
     }
 
     parser = Parser()
-    a = parser.parse(price_files[CHAIN.SuperPharm][0])
+    a = parser.parse(price_files[CHAIN.Victory][0])
 
     pass
 
