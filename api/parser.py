@@ -219,7 +219,34 @@ class ParserSuperPharm(BaseParser):
     def parse_items_file(
         self, file: DataFile, data: dict, server_type: SERVER_TYPE, chain_id: str
     ) -> list[Entity]:
-        pass
+        root = data["OrderXml"]["Envelope"]
+        item_list = root["Header"]["Details"]["Line"]
+        subchain_id = root["SubChainId"]
+        store_id = root["StoreId"]
+
+        return [
+            ParserUtils.create_item(
+                chain_id,
+                subchain_id,
+                store_id,
+                item["ItemCode"],
+                "1",  # Normal
+                item["ItemName"],
+                item["ManufacturerName"],
+                item["ManufactureCountry"],
+                item["ManufacturerItemDescription"],
+                item["UnitQty"],
+                item["Quantity"],
+                item["blsWeighted"],
+                item["UnitOfMeasure"],
+                item["UnitOfMeasurePrice"],
+                item["QtyInPackage"],
+                item["ItemStatus"],
+                item["ItemPrice"],
+                item["AllowDiscount"],
+            )
+            for item in item_list
+        ]
 
     def parse_promos_file(
         self, file: DataFile, data: dict, server_type: SERVER_TYPE, chain_id: str
@@ -532,10 +559,10 @@ class ParserUtils:
     @staticmethod
     def parse_item_type(type: str) -> ITEM_TYPE:
         match ParserUtils.normalize_number(type):
-            case "0":
-                return ITEM_TYPE.Proprietary
             case "1":
                 return ITEM_TYPE.Normal
+            case "0":
+                return ITEM_TYPE.Proprietary
 
         return ITEM_TYPE.Normal
 
@@ -553,6 +580,9 @@ class ParserUtils:
 
     @staticmethod
     def parse_unit(unit: str) -> UNIT:
+        if not unit:
+            return UNIT.Unit
+
         match unit:
             case "גרמים" | "גרם" | "גר" | "ג":
                 return UNIT.Gram
@@ -625,11 +655,11 @@ if __name__ == "__main__":
             chain=chain, category=FILE_CATEGORY.PricesFull, amount=1
         )
         for chain in CHAIN
-        if CHAINS_DATA[chain]["server"]["type"] == SERVER_TYPE.Shufersal
+        if CHAINS_DATA[chain]["server"]["type"] == SERVER_TYPE.SuperPharm
     }
 
     parser = Parser()
-    a = parser.parse(price_files[CHAIN.Shufersal][0])
+    a = parser.parse(price_files[CHAIN.SuperPharm][0])
 
     pass
 
