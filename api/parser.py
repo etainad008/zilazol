@@ -136,7 +136,34 @@ class ParserShufersal(BaseParser):
     def parse_items_file(
         self, file: DataFile, data: dict, server_type: SERVER_TYPE, chain_id: str
     ) -> list[Entity]:
-        pass
+        root = data.get("Root", data.get("root"))
+        item_list = root["Items"]["Item"]
+        subchain_id = root["SubChainId"]
+        store_id = root["StoreId"]
+
+        return [
+            ParserUtils.create_item(
+                chain_id,
+                subchain_id,
+                store_id,
+                item["ItemCode"],
+                item["ItemType"],
+                item["ItemName"],
+                item["ManufacturerName"],
+                item["ManufactureCountry"],
+                item["ManufacturerItemDescription"],
+                item["UnitQty"],
+                item["Quantity"],
+                item["bIsWeighted"],
+                item["UnitOfMeasure"],
+                item["UnitOfMeasurePrice"],
+                item["QtyInPackage"],
+                item["ItemStatus"],
+                item["ItemPrice"],
+                item["AllowDiscount"],
+            )
+            for item in item_list
+        ]
 
     def parse_promos_file(
         self, file: DataFile, data: dict, server_type: SERVER_TYPE, chain_id: str
@@ -592,14 +619,19 @@ def enum_decoder(dct):
 
 
 if __name__ == "__main__":
-    # servers = {server_type: FileServer(server_type) for server_type in SERVER_TYPE}
-    # price_files = {
-    #     chain: servers[CHAINS_DATA[chain]["server"]["type"]].get_files(
-    #         chain=chain, category=FILE_CATEGORY.PricesFull, amount=1
-    #     )
-    #     for chain in CHAIN
-    #     # if CHAINS_DATA[chain]["server"]["type"] == SERVER_TYPE.Cerberus
-    # }
+    servers = {server_type: FileServer(server_type) for server_type in SERVER_TYPE}
+    price_files = {
+        chain: servers[CHAINS_DATA[chain]["server"]["type"]].get_files(
+            chain=chain, category=FILE_CATEGORY.PricesFull, amount=1
+        )
+        for chain in CHAIN
+        if CHAINS_DATA[chain]["server"]["type"] == SERVER_TYPE.Shufersal
+    }
+
+    parser = Parser()
+    a = parser.parse(price_files[CHAIN.Shufersal][0])
+
+    pass
 
     # price_files = {}
     # for chain in CHAIN:
@@ -637,20 +669,20 @@ if __name__ == "__main__":
     # with open("output.json", "w", encoding="utf-8") as file:
     #     json.dump(items_dict, file, cls=EnumEncoder, ensure_ascii=False, indent=4)
 
-    with open(r"D:\projects\zilazol\output.json", "r", encoding="utf-8") as file:
-        items_dict = json.load(file, object_hook=enum_decoder)
+    # with open(r"D:\projects\zilazol\output.json", "r", encoding="utf-8") as file:
+    #     items_dict = json.load(file, object_hook=enum_decoder)
 
-    print("Parsed")
+    # print("Parsed")
 
-    count = 0
-    print(f"Parsing {len(items_dict)} items.")
-    for code in items_dict:
-        derived_name = derive_name([item["name"] for item in items_dict[code]])
-        count += 1
-        if count % 25 == 0:
-            print(f"{count}... {code} : {derived_name}")
+    # count = 0
+    # print(f"Parsing {len(items_dict)} items.")
+    # for code in items_dict:
+    #     derived_name = derive_name([item["name"] for item in items_dict[code]])
+    #     count += 1
+    #     if count % 25 == 0:
+    #         print(f"{count}... {code} : {derived_name}")
 
-    print("\nDone")
+    # print("\nDone")
 
     # with Database() as db:
     #     for file_list in store_files.values():
