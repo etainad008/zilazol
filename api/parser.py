@@ -647,9 +647,8 @@ if __name__ == "__main__":
     for code in items_dict:
         derived_name = derive_name([item["name"] for item in items_dict[code]])
         count += 1
-        print(f"{count}...: {derived_name}")
-        if count % 100 == 0:
-            break
+        if count % 25 == 0:
+            print(f"{count}... {code} : {derived_name}")
 
     print("\nDone")
 

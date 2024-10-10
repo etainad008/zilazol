@@ -6,7 +6,7 @@ from Levenshtein import jaro_winkler
 
 
 # tokens which number of names divided by their number of occurrences above this threshold are taken into the final name.
-TOKEN_RATIO_THRESHOLD = 0.25
+TOKEN_RATIO_THRESHOLD = 0.33
 
 # tokens which their Levenshtein ratio is above this are merged into a single token.
 # we will take the longest among them.
@@ -83,6 +83,14 @@ def derive_name(name_list: list[str]) -> str:
 
         # average index - maybe give indexes which are abnormal less weight
         derived_tokens[token] = sum(indexes) / number_of_occurrences
+
+        index_count = {i: indexes.count(i) for i in indexes}
+        index_weights = {i: index_count[i] / number_of_occurrences for i in index_count}
+        weighted_mean_sum = sum(
+            key * index_count[key] * index_weights[key] for key in index_count
+        )
+
+        derived_tokens[token] = weighted_mean_sum / number_of_occurrences
 
     return " ".join(
         sorted(derived_tokens.keys(), key=lambda token: derived_tokens[token])
