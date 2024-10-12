@@ -1,5 +1,6 @@
 CREATE TYPE STORE_TYPE AS ENUM ('physical', 'online', 'physical_and_online');
 CREATE TYPE UNIT AS ENUM (
+    'unknown',
     'unit',
     'milligram',
     'gram',
@@ -10,30 +11,32 @@ CREATE TYPE UNIT AS ENUM (
     'centimeter',
     'meter'
 );
+CREATE TYPE ITEM_TYPE AS ENUM ('proprietary', 'normal');
 
 CREATE TABLE IF NOT EXISTS Chain (
-    id VARCHAR(16) PRIMARY KEY,
+    id CHAR(13) PRIMARY KEY,
     name VARCHAR(64) UNIQUE NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS Subchain (
     id VARCHAR(8) NOT NULL,
-    chain_id VARCHAR(16) NOT NULL,
+    chain_id CHAR(13) NOT NULL,
     name VARCHAR(64) NOT NULL,
 
     PRIMARY KEY (id, chain_id),
     FOREIGN KEY (chain_id) REFERENCES Chain(id)
 );
 
+DROP TABLE Store;
 CREATE TABLE IF NOT EXISTS Store (
     id VARCHAR(4) NOT NULL,
-    chain_id VARCHAR(16) NOT NULL,
+    chain_id CHAR(13) NOT NULL,
     subchain_id VARCHAR(8) NOT NULL,
-    bikoret_number CHAR(1) NOT NULL,
+    bikoret_number VARCHAR(8) NOT NULL,
     type STORE_TYPE NOT NULL,
-    name VARCHAR(32) NOT NULL,
-    address VARCHAR(32) NOT NULL,
-    city VARCHAR(32) NOT NULL,
+    name VARCHAR(64) NOT NULL,
+    address VARCHAR(64),
+    city VARCHAR(32),
     zip_code CHAR(7),
 
     PRIMARY KEY (id, chain_id, subchain_id),
@@ -42,7 +45,6 @@ CREATE TABLE IF NOT EXISTS Store (
 
 CREATE TABLE IF NOT EXISTS Item (
     code VARCHAR(16) PRIMARY KEY,
-    type CHAR(1) NOT NULL,
     name TEXT NOT NULL,
     manufacturer_name VARCHAR(32),
     manufacture_country VARCHAR(32),
@@ -58,6 +60,7 @@ CREATE TABLE IF NOT EXISTS Item_Instance (
 	store_id VARCHAR(4) NOT NULL,
     chain_id VARCHAR(16) NOT NULL,
     subchain_id VARCHAR(8) NOT NULL,
+    type ITEM_TYPE NOT NULL,
 	price INT NOT NULL,
 	allow_discount BOOLEAN NOT NULL,
 

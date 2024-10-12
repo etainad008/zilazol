@@ -16,4 +16,4 @@ def unzip(zip_bytes: bytes) -> bytes:
 
 
 def ungzip(gzip_bytes: bytes) -> bytes:
-    gzip.decompress(gzip_bytes)
+    return gzip.decompress(gzip_bytes)

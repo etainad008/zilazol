@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 from lxml import etree
 import json
 import time
+import re
 
 from constants import SERVER_TYPE, SERVER_TYPE_DATA, FILE_CATEGORY, CHAIN, CHAINS_DATA
 from data_file import DataFile
@@ -14,7 +15,7 @@ from utils import unzip, ungzip
 
 
 class FileServer(ABC):
-    def __new__(cls, type: SERVER_TYPE, creds: dict) -> "FileServer":
+    def __new__(cls, type: SERVER_TYPE) -> "FileServer":
         match type:
             case SERVER_TYPE.Cerberus:
                 return super().__new__(FileServerCerberus)
@@ -29,9 +30,8 @@ class FileServer(ABC):
             case _:
                 raise ValueError(f"Unsupported server type: {type}")
 
-    def __init__(self, type: SERVER_TYPE, creds: dict) -> None:
+    def __init__(self, type: SERVER_TYPE) -> None:
         self.type = type
-        self.creds = creds
 
         self.server_data = SERVER_TYPE_DATA[type]
         self.base_url = self.server_data["metadata"]["domain"]
@@ -47,7 +47,7 @@ class FileServer(ABC):
     def get_category_parameter_name(self, category: FILE_CATEGORY) -> str:
         return self.server_data["categories"][category]["parameter_name"]
 
-    def is_chain_valid(self, chain: CHAIN) -> bool:
+    def verify_chain(self, chain: CHAIN) -> bool:
         valid_chains = [
             chain
             for chain in CHAIN
@@ -55,14 +55,16 @@ class FileServer(ABC):
         ]
         if not chain in valid_chains:
             raise ValueError(
-                f"Chain \"{chain.name}\" is not supported in \"{self.type.name}\" server; try using \"{CHAINS_DATA[chain]["server"]["type"].name}\" server instead"
+                f"Chain \"{chain.name}\" is not supported in \"{self.type.name}\" server; try using \"{CHAINS_DATA[chain]['server']['type'].name}\" server instead"
             )
 
     def get_subdomain_by_chain(self, chain: CHAIN) -> str:
         if not self.server_data["metadata"]["chain_by_subdomain"]:
             return self.base_url
 
-        return self.server_data["metadata"]["domain"].format(CHAINS_DATA[chain]["server"]["domain_name"])
+        return self.server_data["metadata"]["domain"].format(
+            CHAINS_DATA[chain]["server"]["domain_name"]
+        )
 
     @abstractmethod
     def get_files(
@@ -92,9 +94,18 @@ class FileServerCerberus(FileServer):
     def get_files(
         self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
     ) -> list[DataFile]:
-        self.is_chain_valid(chain)
-        file_list, cftp = self.get_file_list(chain, category, amount)
-        return [DataFile(self.get_file_content(file["fname"], category == FILE_CATEGORY.Stores, cftp), category, self.type) for file in file_list]
+        self.verify_chain(chain)
+        file_list, cftp = self.get_file_list(chain, category, amount, date=None)
+        return [
+            DataFile(
+                content=self.get_file_content(
+                    file["fname"], category == FILE_CATEGORY.Stores, cftp
+                ),
+                chain=chain,
+                category=category,
+            )
+            for file in file_list
+        ]
 
     def updated(self, category: FILE_CATEGORY) -> bool:
         pass
@@ -109,7 +120,7 @@ class FileServerCerberus(FileServer):
 
         if is_xml:
             return res.content
-        
+
         return ungzip(res.content)
 
     def extract_csrf(self, content: bytes):
@@ -130,7 +141,13 @@ class FileServerCerberus(FileServer):
 
         username = CHAINS_DATA[chain]["server"]["creds"]["username"]
         password = CHAINS_DATA[chain]["server"]["creds"]["password"]
-        login_params = {"r": "", "username": username, "password": password, "Submit": self.SUBMIT, "csrftoken": csrf_token}
+        login_params = {
+            "r": "",
+            "username": username,
+            "password": password,
+            "Submit": self.SUBMIT,
+            "csrftoken": csrf_token,
+        }
         headers = {"Cookie": f"cftpSID={cftp_token}"}
 
         # /login/user redirects to /file
@@ -139,40 +156,50 @@ class FileServerCerberus(FileServer):
 
         return (self.extract_csrf(res.content), res.cookies.get("cftpSID"))
 
-    def get_file_list(self, chain: CHAIN, category: FILE_CATEGORY, amount: int, date: datetime = None, store_id: str = None) -> list:
+    def get_file_list(
+        self,
+        chain: CHAIN,
+        category: FILE_CATEGORY,
+        amount: int,
+        date: datetime = datetime.today(),
+        store_id: str = None,
+    ) -> list:
         csrf, cftp = self.login(chain)
         body_params = {
-            'iDisplayLength': amount, # how many we want the server to return
-            'mDataProp_1': 'typeLabel',
-            'sSearch_1': 'file', # we only want files
-            'sSearch': self.get_search_string(chain, category, store_id, date),
-            'csrftoken': csrf
+            "iDisplayLength": amount,  # how many we want the server to return
+            "mDataProp_1": "typeLabel",
+            "sSearch_1": "file",  # we only want files
+            "sSearch": self.get_search_string(chain, category, store_id, date),
+            "csrftoken": csrf,
         }
-        headers = {
-            "Cookie": f"cftpSID={cftp}"
-        }
+        headers = {"Cookie": f"cftpSID={cftp}"}
 
-        res = requests.post(url=self.base_url + self.FILE_LIST, headers=headers, data=body_params)
+        res = requests.post(
+            url=self.base_url + self.FILE_LIST, headers=headers, data=body_params
+        )
         FileServer.check_response(res)
 
         data = res.json()
         file_list = list(data.get("aaData"))
-        
-        return file_list, cftp
-    
-    def get_search_string(self, chain: CHAIN, category: FILE_CATEGORY, store_id: str = None, date: datetime = None) -> str:
-        string = f"{self.get_category_parameter_name(category=category)}{CHAINS_DATA[chain]["id"]}"
 
-        store_id = "007"
+        return file_list, cftp
+
+    def get_search_string(
+        self,
+        chain: CHAIN,
+        category: FILE_CATEGORY,
+        store_id: str = None,
+        date: datetime = None,
+    ) -> str:
+        string = f"{self.get_category_parameter_name(category=category)}{CHAINS_DATA[chain]['id']}"
 
         if not store_id is None and category != FILE_CATEGORY.Stores:
             string += f"-{store_id}"
 
         if not date is None:
-            string += f"-{date.strftime("%Y%m%d")}"
+            string += f"-{date.strftime('%Y%m%d')}"
 
         return string
-
 
     def time_string_to_datetime(time: str):
         return datetime.strptime(time, "%Y-%m-%dT%H:%M:%SZ")
@@ -184,7 +211,7 @@ class FileServerShufersal(FileServer):
     def get_files(
         self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
     ) -> list[DataFile]:
-        self.is_chain_valid(chain)
+        self.verify_chain(chain)
         self.get_affinity_tokens()
         res = self.update_categories(category=category)
         self.check_response(res)
@@ -192,9 +219,9 @@ class FileServerShufersal(FileServer):
 
         return [
             DataFile(
-                self.get_file_content(file["download_link"]),
+                content=self.get_file_content(file["download_link"]),
+                chain=chain,
                 category=category,
-                server_type=self.type,
             )
             for file in file_list[:amount]
         ]
@@ -343,20 +370,33 @@ class FileServerSuperPharm(FileServer):
         )
         self.check_response(res)
 
-        return self.hebrew_ascii_to_utf8(unzip(res.content))
+        unzipped = unzip(res.content)
+        encoding = self.get_encoding(unzipped)
+
+        if encoding == b"ISO-8859-8":
+            return self.hebrew_ascii_to_utf8(unzipped)
+        elif encoding == b"UTF-8":
+            return unzipped
+
+    def get_encoding(self, content: bytes) -> str:
+        match = re.search(rb'encoding=["\'](.*?)["\']', content)
+        if match:
+            return match.group(1).upper()
+        else:
+            return None
 
     def get_files(
         self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
     ) -> list[DataFile]:
-        self.is_chain_valid(chain)
+        self.verify_chain(chain)
         res, cookie = self.update_categories(category=category)
         file_list = self.get_file_list(res.content)
 
         return [
             DataFile(
-                self.get_file_content(file["download_link"], cookie),
+                content=self.get_file_content(file["download_link"], cookie),
+                chain=chain,
                 category=category,
-                server_type=self.type,
             )
             for file in file_list[:amount]
         ]
@@ -372,7 +412,7 @@ class FileServerNibit(FileServer):
     def get_files(
         self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
     ) -> list[DataFile]:
-        self.is_chain_valid(chain)
+        self.verify_chain(chain)
         content = self.update_parameters(
             chain,
             category,
@@ -384,9 +424,9 @@ class FileServerNibit(FileServer):
 
         return [
             DataFile(
-                ungzip(self.get_file_content(file["download_link"])),
+                content=ungzip(self.get_file_content(file["download_link"])),
+                chain=chain,
                 category=category,
-                server_type=self.type,
             )
             for file in file_list
         ]
@@ -464,14 +504,16 @@ class FileServerBinaProjects(FileServer):
     def get_files(
         self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
     ) -> list[DataFile]:
-        self.is_chain_valid(chain)
-        file_list = self.update_parameters(chain=chain, category=category, date=datetime.today())
-        
+        self.verify_chain(chain)
+        file_list = self.update_parameters(
+            chain=chain, category=category, date=datetime.today()
+        )
+
         return [
             DataFile(
-                unzip(self.get_file_content(chain, file["FileNm"])),
+                content=unzip(self.get_file_content(chain, file["FileNm"])),
+                chain=chain,
                 category=category,
-                server_type=self.type,
             )
             for file in file_list
         ]
@@ -481,22 +523,22 @@ class FileServerBinaProjects(FileServer):
 
     def string_datetime_converter(self, value: str | datetime) -> str | datetime:
         pass
-    
+
     def get_file_content(self, chain: CHAIN, filename: str) -> bytes:
-        params = {
-            "FileNm": filename
-        }
-        download_url = requests.get(url=self.get_subdomain_by_chain(chain) + "/Download.aspx", params=params)
+        params = {"FileNm": filename}
+        download_url = requests.get(
+            url=self.get_subdomain_by_chain(chain) + "/Download.aspx", params=params
+        )
         FileServer.check_response(download_url)
-        
+
         res = requests.get(url=json.loads(download_url.text)[0]["SPath"])
         FileServer.check_response(res)
-        
+
         return res.content
-    
+
     def get_file_list(self, content: str, amount: int) -> list:
         return json.loads(content)[:amount]
-    
+
     def update_parameters(
         self,
         chain: CHAIN,
@@ -510,7 +552,9 @@ class FileServerBinaProjects(FileServer):
             "WFileType": self.get_category_parameter_name(category),
             "WDate": "" if date is None else date.strftime("%d/%m/%Y"),
         }
-        res = requests.get(url=self.get_subdomain_by_chain(chain) + "/MainIO_Hok.aspx", params=params)
+        res = requests.get(
+            url=self.get_subdomain_by_chain(chain) + "/MainIO_Hok.aspx", params=params
+        )
         FileServer.check_response(res)
 
         return res.json()
