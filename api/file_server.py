@@ -68,7 +68,7 @@ class FileServer(ABC):
 
     @abstractmethod
     def get_files(
-        self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
+        self, chain: CHAIN, category: FILE_CATEGORY, amount: int, store_id: str
     ) -> list[DataFile]:
         """Gets a certain amount of files of a specific type."""
         raise NotImplementedError()
@@ -92,7 +92,7 @@ class FileServerCerberus(FileServer):
     SUBMIT = "Sign in"
 
     def get_files(
-        self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
+        self, chain: CHAIN, category: FILE_CATEGORY, amount: int, store_id: str
     ) -> list[DataFile]:
         self.verify_chain(chain)
         file_list, cftp = self.get_file_list(chain, category, amount, date=None)
@@ -209,7 +209,7 @@ class FileServerShufersal(FileServer):
     SHUFERSAL_UPDATE_CATEGORY = "/FileObject/UpdateCategory"
 
     def get_files(
-        self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
+        self, chain: CHAIN, category: FILE_CATEGORY, amount: int, store_id: str
     ) -> list[DataFile]:
         self.verify_chain(chain)
         self.get_affinity_tokens()
@@ -386,7 +386,7 @@ class FileServerSuperPharm(FileServer):
             return None
 
     def get_files(
-        self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
+        self, chain: CHAIN, category: FILE_CATEGORY, amount: int, store_id: str
     ) -> list[DataFile]:
         self.verify_chain(chain)
         res, cookie = self.update_categories(category=category)
@@ -410,15 +410,11 @@ class FileServerSuperPharm(FileServer):
 
 class FileServerNibit(FileServer):
     def get_files(
-        self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
+        self, chain: CHAIN, category: FILE_CATEGORY, amount: int, store_id: str
     ) -> list[DataFile]:
         self.verify_chain(chain)
         content = self.update_parameters(
-            chain,
-            category,
-            datetime.now(),
-            additional_data.get("subchain", "") if additional_data is not None else "",
-            additional_data.get("store_id", "") if additional_data is not None else "",
+            chain, category, datetime.now(), store_id=store_id
         )
         file_list = self.get_file_list(content, amount)
 
@@ -502,12 +498,12 @@ class FileServerNibit(FileServer):
 class FileServerBinaProjects(FileServer):
 
     def get_files(
-        self, chain: CHAIN, category: FILE_CATEGORY, amount: int, additional_data=None
+        self, chain: CHAIN, category: FILE_CATEGORY, amount: int, store_id: str
     ) -> list[DataFile]:
         self.verify_chain(chain)
         file_list = self.update_parameters(
             chain=chain, category=category, date=datetime.today()
-        )
+        )[:amount]
 
         return [
             DataFile(
