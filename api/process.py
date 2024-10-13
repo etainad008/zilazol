@@ -1,7 +1,7 @@
 import re
 from collections import defaultdict
 import sys, io
-from constants import *
+from constants import UNIT_HEBREW
 from Levenshtein import jaro_winkler
 
 

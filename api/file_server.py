@@ -9,7 +9,14 @@ import json
 import time
 import re
 
-from constants import SERVER_TYPE, SERVER_TYPE_DATA, FILE_CATEGORY, CHAIN, CHAINS_DATA
+from constants import (
+    ALL_STORES,
+    CHAIN,
+    CHAINS_DATA,
+    FILE_CATEGORY,
+    SERVER_TYPE,
+    SERVER_TYPE_DATA,
+)
 from data_file import DataFile
 from utils import unzip, ungzip
 
@@ -95,7 +102,9 @@ class FileServerCerberus(FileServer):
         self, chain: CHAIN, category: FILE_CATEGORY, amount: int, store_id: str
     ) -> list[DataFile]:
         self.verify_chain(chain)
-        file_list, cftp = self.get_file_list(chain, category, amount, date=None)
+        file_list, cftp = self.get_file_list(
+            chain, category, amount, date=None, store_id=store_id
+        )
         return [
             DataFile(
                 content=self.get_file_content(
@@ -161,8 +170,8 @@ class FileServerCerberus(FileServer):
         chain: CHAIN,
         category: FILE_CATEGORY,
         amount: int,
-        date: datetime = datetime.today(),
-        store_id: str = None,
+        date: datetime,
+        store_id: str,
     ) -> list:
         csrf, cftp = self.login(chain)
         body_params = {
@@ -188,15 +197,15 @@ class FileServerCerberus(FileServer):
         self,
         chain: CHAIN,
         category: FILE_CATEGORY,
-        store_id: str = None,
-        date: datetime = None,
+        store_id: str,
+        date: datetime,
     ) -> str:
         string = f"{self.get_category_parameter_name(category=category)}{CHAINS_DATA[chain]['id']}"
 
-        if not store_id is None and category != FILE_CATEGORY.Stores:
+        if store_id and store_id != ALL_STORES and category != FILE_CATEGORY.Stores:
             string += f"-{store_id}"
 
-        if not date is None:
+        if date:
             string += f"-{date.strftime('%Y%m%d')}"
 
         return string

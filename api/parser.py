@@ -4,7 +4,20 @@ from collections import defaultdict
 import json
 
 from entity import Entity
-from constants import *
+from constants import (
+    CHAIN,
+    CHAINS_DATA,
+    ENTITY_TYPE,
+    FILE_CATEGORY,
+    FILE_CATEGORY_TO_ENTITY_TYPE,
+    ITEM_STATUS,
+    ITEM_TYPE,
+    SERVER_TYPE,
+    STORE_TYPE,
+    STORE_TYPE_MAP,
+    TABLE,
+    UNIT,
+)
 from data_file import DataFile
 from file_server import FileServer
 from process import derive_name, normalize_whitespace
